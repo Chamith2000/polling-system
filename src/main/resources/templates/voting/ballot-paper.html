@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title>Cast Your Vote</title>
+  <link rel="stylesheet" th:href="@{/vendors/css/vendor.bundle.base.css}">
+  <link rel="stylesheet" th:href="@{/css/style.css}">
+  <style>
+    .candidate-card {
+      border: 2px solid transparent;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .candidate-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    .candidate-card.selected {
+      border-color: #28a745;
+      background-color: #f0fff4;
+    }
+    .step-container { display: none; }
+    .step-container.active { display: block; animation: fadeIn 0.5s; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    /* Dynamic Faculty Theme Color */
+    :root {
+      --faculty-color: [[${student.faculty.colorCode} ?: '#007bff']];
+    }
+    .faculty-header { background-color: var(--faculty-color); color: white; }
+  </style>
+</head>
+<body>
+
+<div class="container-fluid page-body-wrapper full-page-wrapper">
+  <div class="content-wrapper d-flex flex-column align-items-center pt-5">
+
+    <div class="w-100 text-center mb-4">
+      <h2 class="display-4 font-weight-bold"
+          th:text="${student.faculty.name + ' Election'}">Faculty Name</h2>
+      <h4 class="text-muted">Welcome, <span th:text="${student.fullName}">Student Name</span></h4>
+    </div>
+
+    <div class="col-md-10 grid-margin stretch-card">
+      <div class="card shadow-lg">
+        <div class="card-body" id="votingContainer">
+
+          <div class="progress mb-4" style="height: 20px;">
+            <div id="progressBar" class="progress-bar bg-success" role="progressbar" style="width: 0%"></div>
+          </div>
+
+          <form id="votingForm">
+            <div th:each="entry, stat : ${ballot}" class="step-container"
+                 th:data-step="${stat.index}"
+                 th:data-position-id="${entry.key.id}"
+                 th:data-position-name="${entry.key.name}">
+
+              <div class="text-center mb-5">
+                <h3 class="display-5" th:text="${entry.key.name}">Position Name</h3>
+                <p class="text-muted">Select one candidate</p>
+              </div>
+
+              <div class="row justify-content-center">
+                <div th:each="candidate : ${entry.value}" class="col-md-3 mb-4">
+                  <div class="card candidate-card p-3 text-center"
+                       onclick="selectCandidate(this)"
+                       th:data-candidate-id="${candidate.id}"
+                       th:data-candidate-name="${candidate.student.fullName}">
+
+                    <img th:src="@{${candidate.imagePath} ?: '/images/faces/face1.jpg'}"
+                         class="rounded-circle mb-3 mx-auto d-block"
+                         style="width: 120px; height: 120px; object-fit: cover;">
+
+                    <h5 th:text="${candidate.student.fullName}">Candidate Name</h5>
+                    <p class="badge badge-outline-primary" th:text="${candidate.candidateNumber}">#01</p>
+                  </div>
+                </div>
+
+                <div class="col-md-3 mb-4">
+                  <div class="card candidate-card p-3 text-center"
+                       onclick="selectCandidate(this)"
+                       th:data-candidate-id="0"
+                       th:data-candidate-name="'Abstain (No Vote)'">
+                    <div class="rounded-circle bg-secondary mb-3 mx-auto d-flex align-items-center justify-content-center"
+                         style="width: 120px; height: 120px;">
+                      <i class="mdi mdi-close text-white icon-lg"></i>
+                    </div>
+                    <h5>Abstain</h5>
+                    <p class="text-muted">Skip this vote</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="text-center mt-4">
+                <button type="button" class="btn btn-primary btn-lg px-5" onclick="nextStep()">
+                  Next Position <i class="mdi mdi-arrow-right"></i>
+                </button>
+              </div>
+            </div>
+
+            <div id="summaryStep" class="step-container text-center">
+              <h2 class="text-success mb-4">Summary of Your Votes</h2>
+              <div class="table-responsive mb-4">
+                <table class="table table-bordered">
+                  <thead><tr><th>Position</th><th>Your Choice</th></tr></thead>
+                  <tbody id="summaryTableBody">
+                  </tbody>
+                </table>
+              </div>
+              <button type="button" class="btn btn-success btn-lg px-5" onclick="submitFinalVote()">
+                CONFIRM & SUBMIT VOTE
+              </button>
+            </div>
+
+          </form>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script th:src="@{/vendors/js/vendor.bundle.base.js}"></script>
+<script th:inline="javascript">
+  /*<![CDATA[*/
+
+  let currentStep = 0;
+  let totalSteps = [[${ballot.size()}]];
+  let selections = {}; // Stores { positionId: candidateId }
+  let summaryData = [];
+
+  // Initialize first step
+  let firstStep = document.querySelector('.step-container[data-step="0"]');
+  if (firstStep) {
+    firstStep.classList.add('active');
+  }
+  updateProgress();
+
+  function selectCandidate(element) {
+    // Remove selection from siblings
+    let stepDiv = element.closest('.step-container');
+    stepDiv.querySelectorAll('.candidate-card').forEach(c => c.classList.remove('selected'));
+
+    // Select clicked
+    element.classList.add('selected');
+  }
+
+  function nextStep() {
+    let currentDiv = document.querySelector(`.step-container[data-step="${currentStep}"]`);
+    let selected = currentDiv.querySelector('.candidate-card.selected');
+
+    if (!selected) {
+      alert("Please select a candidate or choose 'Abstain' to proceed.");
+      return;
+    }
+
+    // Save selection
+    let posId = currentDiv.getAttribute('data-position-id');
+    let posName = currentDiv.getAttribute('data-position-name');
+    let candId = selected.getAttribute('data-candidate-id');
+    let candName = selected.getAttribute('data-candidate-name');
+
+    selections[posId] = candId;
+    summaryData.push({ position: posName, candidate: candName });
+
+    // Move to next
+    currentDiv.classList.remove('active');
+    currentStep++;
+
+    if (currentStep < totalSteps) {
+      document.querySelector(`.step-container[data-step="${currentStep}"]`).classList.add('active');
+    } else {
+      showSummary();
+    }
+    updateProgress();
+  }
+
+  function showSummary() {
+    let tbody = document.getElementById('summaryTableBody');
+    tbody.innerHTML = '';
+    summaryData.forEach(row => {
+      tbody.innerHTML += `<tr><td class="font-weight-bold">${row.position}</td><td>${row.candidate}</td></tr>`;
+    });
+    document.getElementById('summaryStep').classList.add('active');
+  }
+
+  function updateProgress() {
+    if(totalSteps > 0) {
+      let percent = (currentStep / totalSteps) * 100;
+      document.getElementById('progressBar').style.width = percent + '%';
+    }
+  }
+
+  function submitFinalVote() {
+    if (!confirm("Are you sure you want to submit your vote? This cannot be undone.")) return;
+
+    let candidateIds = Object.values(selections).filter(id => id != 0).map(Number);
+    let studentId = [[${student.studentId}]];
+
+    fetch('/voting/submit?studentId=' + studentId, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(candidateIds)
+    })
+            .then(response => {
+              if (response.ok) {
+                window.location.href = "/voting/success";
+              } else {
+                return response.text().then(text => { throw new Error(text) });
+              }
+            })
+            .catch(err => {
+              alert("Error submitting vote: " + err.message);
+            });
+  }
+
+  /*]]>*/
+</script>
+
+</body>
+</html>

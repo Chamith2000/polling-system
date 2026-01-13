@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>University Voting System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 800px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        .screen {
+            display: none;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2em;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 600;
+        }
+
+        input[type="text"], input[type="password"] {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus, input[type="password"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-success {
+            background: #48bb78;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #38a169;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .alert.show {
+            display: block;
+        }
+
+        .alert-error {
+            background: #fed7d7;
+            color: #c53030;
+            border: 1px solid #fc8181;
+        }
+
+        .alert-success {
+            background: #c6f6d5;
+            color: #2f855a;
+            border: 1px solid #9ae6b4;
+        }
+
+        .faculty-header {
+            text-align: center;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            color: white;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #667eea;
+            transition: width 0.3s;
+        }
+
+        .position-card {
+            border: 2px solid #e2e8f0;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+
+        .position-title {
+            font-size: 1.5em;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .position-description {
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        .candidate-list {
+            display: grid;
+            gap: 15px;
+        }
+
+        .candidate-card {
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .candidate-card:hover {
+            border-color: #667eea;
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .candidate-card.selected {
+            border-color: #667eea;
+            background: #f7fafc;
+            border-width: 3px;
+        }
+
+        .candidate-photo {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: #667eea;
+            flex-shrink: 0;
+        }
+
+        .candidate-info {
+            flex: 1;
+        }
+
+        .candidate-name {
+            font-weight: 600;
+            font-size: 1.1em;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .candidate-id {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .summary-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .summary-table th,
+        .summary-table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .summary-table th {
+            background: #f7fafc;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .navigation-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn-secondary {
+            background: #cbd5e0;
+            color: #2d3748;
+        }
+
+        .btn-secondary:hover {
+            background: #a0aec0;
+        }
+
+        .step-indicator {
+            text-align: center;
+            color: #666;
+            margin-bottom: 20px;
+            font-size: 1.1em;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <!-- Screen 1: PIN Entry -->
+    <div id="pinScreen" class="screen active">
+        <h1>🔒 Voting Station Access</h1>
+        <div id="pinAlert" class="alert"></div>
+        <div class="input-group">
+            <label for="pinInput">Enter Voting PIN</label>
+            <input type="password" id="pinInput" placeholder="Enter PIN">
+        </div>
+        <button class="btn btn-primary" onclick="validatePin()">Unlock Voting</button>
+    </div>
+
+    <!-- Screen 2: Student ID Entry -->
+    <div id="studentScreen" class="screen">
+        <h1>🎓 Student Identification</h1>
+        <div id="studentAlert" class="alert"></div>
+        <div class="input-group">
+            <label for="studentIdInput">Enter Student ID</label>
+            <input type="text" id="studentIdInput" placeholder="Enter Student ID">
+        </div>
+        <button class="btn btn-primary" onclick="validateStudent()">Start Voting</button>
+    </div>
+
+    <!-- Screen 3: Voting Interface -->
+    <div id="votingScreen" class="screen">
+        <div id="facultyHeader" class="faculty-header"></div>
+        <div class="step-indicator" id="stepIndicator"></div>
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <div id="votingContent"></div>
+    </div>
+
+    <!-- Screen 4: Summary -->
+    <div id="summaryScreen" class="screen">
+        <h1>📋 Vote Summary</h1>
+        <p style="text-align: center; color: #666; margin-bottom: 20px;">
+            Please review your selections carefully before submitting.
+        </p>
+        <div id="summaryContent"></div>
+        <div class="navigation-buttons">
+            <button class="btn btn-secondary" onclick="goBackToVoting()">Go Back</button>
+            <button class="btn btn-success" onclick="submitVotes()">Submit Vote</button>
+        </div>
+    </div>
+
+    <!-- Screen 5: Success -->
+    <div id="successScreen" class="screen">
+        <div style="text-align: center;">
+            <div style="font-size: 5em; margin-bottom: 20px;">✅</div>
+            <h1>Vote Submitted Successfully!</h1>
+            <p style="color: #666; margin: 20px 0;">Thank you for participating in the election.</p>
+            <button class="btn btn-primary" onclick="resetVoting()">Done</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentSession = null;
+    let positions = [];
+    let currentPositionIndex = 0;
+    let votes = {};
+
+    function showScreen(screenId) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(screenId).classList.add('active');
+    }
+
+    function showAlert(elementId, message, type) {
+        const alert = document.getElementById(elementId);
+        alert.className = `alert alert-${type} show`;
+        alert.textContent = message;
+        setTimeout(() => alert.classList.remove('show'), 5000);
+    }
+
+    async function validatePin() {
+        const pin = document.getElementById('pinInput').value;
+        if (!pin) {
+            showAlert('pinAlert', 'Please enter a PIN', 'error');
+            return;
+        }
+
+        try {
+            const response = await fetch('/voting/api/validate-pin', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({pin})
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                showScreen('studentScreen');
+            } else {
+                showAlert('pinAlert', data.message, 'error');
+            }
+        } catch (error) {
+            showAlert('pinAlert', 'Error validating PIN', 'error');
+        }
+    }
+
+    async function validateStudent() {
+        const studentId = document.getElementById('studentIdInput').value;
+        if (!studentId) {
+            showAlert('studentAlert', 'Please enter a Student ID', 'error');
+            return;
+        }
+
+        try {
+            const response = await fetch('/voting/api/validate-student', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({studentId})
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                currentSession = data.session;
+                await loadPositions();
+            } else {
+                showAlert('studentAlert', data.message, 'error');
+            }
+        } catch (error) {
+            showAlert('studentAlert', 'Error validating student', 'error');
+        }
+    }
+
+    async function loadPositions() {
+        try {
+            const response = await fetch(`/voting/api/positions/${currentSession.studentId}`);
+            const data = await response.json();
+
+            if (data.success) {
+                positions = data.positions;
+                currentPositionIndex = 0;
+                votes = {};
+                showVotingScreen();
+            }
+        } catch (error) {
+            alert('Error loading positions');
+        }
+    }
+
+    function showVotingScreen() {
+        const header = document.getElementById('facultyHeader');
+        header.style.background = currentSession.facultyColorCode || '#667eea';
+        header.innerHTML = `<h2>Welcome, ${currentSession.studentName}</h2><p>${currentSession.facultyName}</p>`;
+
+        showScreen('votingScreen');
+        renderPosition();
+    }
+
+    function renderPosition() {
+        const position = positions[currentPositionIndex];
+        const progress = ((currentPositionIndex) / positions.length) * 100;
+        document.getElementById('progressFill').style.width = progress + '%';
+        document.getElementById('stepIndicator').textContent =
+            `Position ${currentPositionIndex + 1} of ${positions.length}`;
+
+        let html = `
+                <div class="position-card">
+                    <div class="position-title">${position.positionName}</div>
+                    <div class="position-description">${position.description || ''}</div>
+                    <div class="candidate-list">
+            `;
+
+        position.candidates.forEach(candidate => {
+            const selected = votes[position.positionId] === candidate.candidateId ? 'selected' : '';
+            html += `
+                    <div class="candidate-card ${selected}" onclick="selectCandidate(${position.positionId}, ${candidate.candidateId})">
+                        <div class="candidate-photo">👤</div>
+                        <div class="candidate-info">
+                            <div class="candidate-name">${candidate.fullName}</div>
+                            <div class="candidate-id">${candidate.studentId}</div>
+                        </div>
+                    </div>
+                `;
+        });
+
+        html += `
+                    </div>
+                </div>
+                <div class="navigation-buttons">
+                    ${currentPositionIndex > 0 ? '<button class="btn btn-secondary" onclick="previousPosition()">Previous</button>' : ''}
+                    <button class="btn btn-primary" onclick="nextPosition()" ${!votes[position.positionId] ? 'disabled' : ''} id="nextBtn">Next</button>
+                </div>
+            `;
+
+        document.getElementById('votingContent').innerHTML = html;
+    }
+
+    function selectCandidate(positionId, candidateId) {
+        votes[positionId] = candidateId;
+        renderPosition();
+    }
+
+    function previousPosition() {
+        if (currentPositionIndex > 0) {
+            currentPositionIndex--;
+            renderPosition();
+        }
+    }
+
+    function nextPosition() {
+        const position = positions[currentPositionIndex];
+        if (!votes[position.positionId]) {
+            alert('Please select a candidate');
+            return;
+        }
+
+        if (currentPositionIndex < positions.length - 1) {
+            currentPositionIndex++;
+            renderPosition();
+        } else {
+            showSummary();
+        }
+    }
+
+    function showSummary() {
+        let html = '<table class="summary-table"><thead><tr><th>Position</th><th>Selected Candidate</th></tr></thead><tbody>';
+
+        positions.forEach(position => {
+            const candidateId = votes[position.positionId];
+            const candidate = position.candidates.find(c => c.candidateId === candidateId);
+            html += `
+                    <tr>
+                        <td>${position.positionName}</td>
+                        <td>${candidate.fullName} (${candidate.studentId})</td>
+                    </tr>
+                `;
+        });
+
+        html += '</tbody></table>';
+        document.getElementById('summaryContent').innerHTML = html;
+        showScreen('summaryScreen');
+    }
+
+    function goBackToVoting() {
+        showScreen('votingScreen');
+    }
+
+    async function submitVotes() {
+        try {
+            const response = await fetch('/voting/api/submit', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    studentId: currentSession.studentId,
+                    votes: votes
+                })
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                showScreen('successScreen');
+            } else {
+                alert(data.message);
+            }
+        } catch (error) {
+            alert('Error submitting votes');
+        }
+    }
+
+    function resetVoting() {
+        document.getElementById('pinInput').value = '';
+        document.getElementById('studentIdInput').value = '';
+        currentSession = null;
+        positions = [];
+        votes = {};
+        currentPositionIndex = 0;
+        showScreen('pinScreen');
+    }
+
+    // Enter key handlers
+    document.getElementById('pinInput').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') validatePin();
+    });
+
+    document.getElementById('studentIdInput').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') validateStudent();
+    });
+</script>
+</body>
+</html>
