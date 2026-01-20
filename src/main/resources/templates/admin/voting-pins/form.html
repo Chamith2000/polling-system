@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" xmlns:th="http://www.w3.org/1999/xhtml" layout:decorate="~{layout}">
+<head><title th:text="${pageTitle}">Voting PIN Form</title></head>
+<body>
+<div layout:fragment="content">
+  <div class="row"><div class="col-md-8 offset-md-2"><div class="card"><div class="card-body">
+    <h4 class="card-title" th:text="${pageTitle}">Create Voting PIN</h4>
+    <form th:action="@{${isEdit ? '/admin/voting-pins/edit/' + pin.id : '/admin/voting-pins/create'}}" th:object="${pin}" method="post">
+      <div class="form-group">
+        <label for="pinValue">PIN Value <span class="text-danger">*</span></label>
+        <input type="text" class="form-control form-control-lg" id="pinValue" th:field="*{pinValue}" required maxlength="10" placeholder="e.g., 2025" style="font-size: 24px; letter-spacing: 5px; text-align: center;">
+        <small class="form-text text-muted">This PIN will be used to unlock voting stations</small>
+      </div>
+      <div class="form-group">
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="isActive" th:field="*{isActive}">
+          <label class="form-check-label" for="isActive">
+            <strong>Active</strong> - PIN is currently valid for use
+          </label>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-6">
+          <div class="form-group">
+            <label for="activeFrom">Active From <span class="text-danger">*</span></label>
+            <input type="datetime-local" class="form-control" id="activeFrom" th:field="*{activeFrom}" required>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="form-group">
+            <label for="activeUntil">Active Until <span class="text-danger">*</span></label>
+            <input type="datetime-local" class="form-control" id="activeUntil" th:field="*{activeUntil}" required>
+          </div>
+        </div>
+      </div>
+      <div class="alert alert-info">
+        <i class="mdi mdi-information"></i>
+        <strong>Note:</strong> The PIN will only work during the specified date/time range. Make sure to set appropriate times for your voting period.
+      </div>
+      <div class="form-group">
+        <button type="submit" class="btn btn-primary btn-lg"><i class="mdi mdi-content-save"></i> <span th:text="${isEdit ? 'Update PIN' : 'Create PIN'}">Save</span></button>
+        <a th:href="@{/admin/voting-pins}" class="btn btn-secondary btn-lg"><i class="mdi mdi-cancel"></i> Cancel</a>
+      </div>
+    </form>
+  </div></div></div></div>
+</div>
+</body>
+</html>

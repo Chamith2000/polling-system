@@ -21,19 +21,19 @@ public class Application implements WebMvcConfigurer {
         SpringApplication.run(Application.class, args);
     }
 
-    @PostConstruct
-    private void createArchiveIfNotExists() {
-        File directory = new File(archivePath);
-        if (! directory.exists()){
-            directory.mkdir();
-        }
-    }
-
-    @Override
-    public void addResourceHandlers(ResourceHandlerRegistry registry) {
-
-        // Register resource handler for images
-        registry.addResourceHandler("/files/**").addResourceLocations("file:///"+archivePath+"/")
-                .setCacheControl(CacheControl.maxAge(24, TimeUnit.HOURS).cachePublic());
-    }
+//    @PostConstruct
+//    private void createArchiveIfNotExists() {
+//        File directory = new File(archivePath);
+//        if (! directory.exists()){
+//            directory.mkdir();
+//        }
+//    }
+//
+//    @Override
+//    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+//
+//        // Register resource handler for images
+//        registry.addResourceHandler("/files/**").addResourceLocations("file:///"+archivePath+"/")
+//                .setCacheControl(CacheControl.maxAge(24, TimeUnit.HOURS).cachePublic());
+//    }
 }

@@ -24,9 +24,18 @@ public class RootController {
         // Redirect based on role
         if (isAdmin) {
             return "redirect:/dashboard/admin";
+        } else if (isManager) {
+            return "redirect:/dashboard/manager";
+        } else if (isUser) {
+            return "redirect:/dashboard/user";
         }
 
         // Default fallback for unknown roles
         return "redirect:/auth/login";
+    }
+
+    @GetMapping("/dashboard/voting")
+    public String votingDashboard() {
+        return "voting/dashboard";
     }
 }

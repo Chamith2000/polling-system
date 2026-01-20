@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:th="http://www.w3.org/1999/xhtml"
+      layout:decorate="~{layout}">
+
+<head>
+    <title th:text="${pageTitle}">Position Form</title>
+</head>
+
+<body>
+<div layout:fragment="content">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="card-title" th:text="${pageTitle}">Create Position</h4>
+
+                    <form th:action="@{${isEdit ? '/admin/positions/edit/' + position.id : '/admin/positions/create'}}"
+                          th:object="${position}"
+                          method="post">
+
+                        <div class="form-group">
+                            <label for="name">Position Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="name"
+                                   th:field="*{name}" required
+                                   placeholder="e.g., President">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="orderPriority">Display Order Priority <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="orderPriority"
+                                   th:field="*{orderPriority}" required min="1"
+                                   placeholder="1">
+                            <small class="form-text text-muted">
+                                Lower numbers appear first in voting ballot
+                            </small>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Position Type <span class="text-danger">*</span></label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio"
+                                       th:field="*{isCommon}" value="true"
+                                       id="typeCommon">
+                                <label class="form-check-label" for="typeCommon">
+                                    <i class="mdi mdi-account-multiple text-success"></i> Common Position
+                                    <small class="text-muted d-block">All students can vote for this position</small>
+                                </label>
+                            </div>
+                            <div class="form-check mt-2">
+                                <input class="form-check-input" type="radio"
+                                       th:field="*{isCommon}" value="false"
+                                       id="typeFaculty">
+                                <label class="form-check-label" for="typeFaculty">
+                                    <i class="mdi mdi-account-group text-warning"></i> Faculty-Specific Position
+                                    <small class="text-muted d-block">Only students from specific faculty can vote</small>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="description">Description</label>
+                            <textarea class="form-control" id="description"
+                                      th:field="*{description}" rows="3"
+                                      placeholder="Brief description of this position"></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="mdi mdi-content-save"></i>
+                                <span th:text="${isEdit ? 'Update' : 'Create'}">Save</span>
+                            </button>
+                            <a th:href="@{/admin/positions}" class="btn btn-secondary">
+                                <i class="mdi mdi-cancel"></i> Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

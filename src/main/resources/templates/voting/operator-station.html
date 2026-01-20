@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${stationName} + ' - Operator Station'">Operator Station</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            padding: 60px 50px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            text-align: center;
+            max-width: 700px;
+            width: 100%;
+        }
+
+        .station-badge {
+            display: inline-block;
+            padding: 10px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 25px;
+            font-weight: 600;
+            font-size: 1.1em;
+            margin-bottom: 30px;
+        }
+
+        .status-icon {
+            width: 100px;
+            height: 100px;
+            margin: 0 auto 30px;
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3em;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.2em;
+        }
+
+        .status-text {
+            color: #11998e;
+            font-size: 1.2em;
+            font-weight: 600;
+            margin-bottom: 40px;
+        }
+
+        .instruction {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+            line-height: 1.6;
+        }
+
+        .student-input-container {
+            margin: 30px 0;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 20px;
+            font-size: 1.3em;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            text-align: center;
+            text-transform: uppercase;
+            transition: all 0.3s;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #11998e;
+            box-shadow: 0 0 20px rgba(17, 153, 142, 0.2);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 18px;
+            font-size: 1.2em;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+
+        .btn-activate {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+        }
+
+        .btn-reset {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .message {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 1em;
+            display: none;
+        }
+
+        .message.error {
+            background: #fee;
+            color: #c33;
+            border: 1px solid #fcc;
+        }
+
+        .message.success {
+            background: #efe;
+            color: #3c3;
+            border: 1px solid #cfc;
+        }
+
+        .info-box {
+            background: #f0f9ff;
+            border: 2px solid #0ea5e9;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 30px;
+            text-align: left;
+        }
+
+        .info-box h3 {
+            color: #0369a1;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .info-box ol {
+            color: #0c4a6e;
+            line-height: 2;
+            padding-left: 25px;
+        }
+
+        .info-box li {
+            margin-bottom: 8px;
+        }
+
+        .tablet-status {
+            background: #fef3c7;
+            border: 2px solid #f59e0b;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .tablet-status h4 {
+            color: #92400e;
+            margin-bottom: 5px;
+        }
+
+        .tablet-status p {
+            color: #78350f;
+            font-size: 0.95em;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="station-badge" th:text="${stationName}">Faculty Station</div>
+
+    <div class="status-icon">👤</div>
+    <h1>Operator Station</h1>
+    <p class="status-text">READY FOR VALIDATION</p>
+
+    <div class="tablet-status">
+        <h4>📱 Tablet Status</h4>
+        <p>Make sure the tablet is showing "Waiting for student..." screen</p>
+    </div>
+
+    <p class="instruction">
+        Enter the student's ID to activate their ballot on the tablet
+    </p>
+
+    <div class="student-input-container">
+        <input type="text" id="studentIdInput" placeholder="Enter Student ID" autofocus>
+    </div>
+
+    <div class="button-group">
+        <button class="btn btn-activate" onclick="activateBallot()">
+            🚀 Activate Ballot
+        </button>
+        <button class="btn btn-reset" onclick="resetTablet()">
+            🔄 Reset Tablet
+        </button>
+    </div>
+
+    <div class="message" id="message"></div>
+
+    <div class="info-box">
+        <h3>📋 Operator Instructions</h3>
+        <ol>
+            <li><strong>Check Tablet:</strong> Ensure tablet shows "Waiting" screen</li>
+            <li><strong>Request ID:</strong> Ask student for their ID card</li>
+            <li><strong>Enter ID:</strong> Type student ID carefully</li>
+            <li><strong>Activate:</strong> Click "Activate Ballot" button</li>
+            <li><strong>Student Votes:</strong> Student completes voting on tablet</li>
+            <li><strong>Auto Reset:</strong> Tablet resets automatically after submission</li>
+            <li><strong>Manual Reset:</strong> Use "Reset Tablet" if needed</li>
+        </ol>
+    </div>
+</div>
+
+<script th:inline="javascript">
+    const stationId = /*[[${stationId}]]*/ 'ENG';
+
+    document.getElementById('studentIdInput').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            activateBallot();
+        }
+    });
+
+    async function activateBallot() {
+        const studentId = document.getElementById('studentIdInput').value.trim().toUpperCase();
+        const messageDiv = document.getElementById('message');
+
+        if (!studentId) {
+            showMessage('⚠️ Please enter a Student ID', 'error');
+            return;
+        }
+
+        try {
+            const formData = new URLSearchParams();
+            formData.append('studentId', studentId);
+            formData.append('stationId', stationId);
+
+            const response = await fetch('/voting/validate-student', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                showMessage('✅ ' + data.message + ' - Ballot is now active on tablet!', 'success');
+                document.getElementById('studentIdInput').value = '';
+
+                // Auto-clear message after 3 seconds
+                setTimeout(() => {
+                    document.getElementById('message').style.display = 'none';
+                }, 3000);
+            } else {
+                showMessage('❌ ' + data.message, 'error');
+                document.getElementById('studentIdInput').value = '';
+            }
+
+            document.getElementById('studentIdInput').focus();
+        } catch (error) {
+            showMessage('❌ Error validating student', 'error');
+            console.error(error);
+        }
+    }
+
+    async function resetTablet() {
+        if (!confirm('Are you sure you want to reset the tablet? This will clear any active voting session.')) {
+            return;
+        }
+
+        try {
+            const response = await fetch('/voting/reset-ballot/' + stationId, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                showMessage('✅ Tablet has been reset successfully', 'success');
+                document.getElementById('studentIdInput').value = '';
+                document.getElementById('studentIdInput').focus();
+            } else {
+                showMessage('❌ Error resetting tablet', 'error');
+            }
+        } catch (error) {
+            showMessage('❌ Error resetting tablet', 'error');
+            console.error(error);
+        }
+    }
+
+    function showMessage(text, type) {
+        const messageDiv = document.getElementById('message');
+        messageDiv.textContent = text;
+        messageDiv.className = 'message ' + type;
+        messageDiv.style.display = 'block';
+    }
+</script>
+</body>
+</html>

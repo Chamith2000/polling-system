@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voting System - PIN Entry</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background: white;
+            padding: 50px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 1.1em;
+        }
+
+        .pin-input-container {
+            margin: 30px 0;
+        }
+
+        input[type="password"] {
+            width: 100%;
+            padding: 20px;
+            font-size: 1.5em;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            text-align: center;
+            letter-spacing: 5px;
+            transition: all 0.3s;
+        }
+
+        input[type="password"]:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.2);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 18px;
+            font-size: 1.2em;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+            margin-top: 20px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .message {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 1em;
+            display: none;
+        }
+
+        .message.error {
+            background: #fee;
+            color: #c33;
+            border: 1px solid #fcc;
+        }
+
+        .message.success {
+            background: #efe;
+            color: #3c3;
+            border: 1px solid #cfc;
+        }
+
+        .lock-icon {
+            font-size: 4em;
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="lock-icon">🔒</div>
+    <h1>University Voting System</h1>
+    <p class="subtitle">Enter PIN to unlock voting station</p>
+
+    <div class="pin-input-container">
+        <input type="password" id="pinInput" placeholder="Enter PIN" maxlength="10" autofocus>
+    </div>
+
+    <button class="btn" onclick="validatePin()">Unlock</button>
+
+    <div class="message" id="message"></div>
+</div>
+
+<script>
+    document.getElementById('pinInput').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            validatePin();
+        }
+    });
+
+    async function validatePin() {
+        const pin = document.getElementById('pinInput').value.trim();
+        const messageDiv = document.getElementById('message');
+
+        if (!pin) {
+            showMessage('Please enter a PIN', 'error');
+            return;
+        }
+
+        try {
+            const formData = new URLSearchParams();
+            formData.append('pin', pin);
+
+            const response = await fetch('/voting/validate-pin', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                showMessage('PIN validated! Redirecting...', 'success');
+                setTimeout(() => {
+                    window.location.href = '/voting/voting-station';
+                }, 1000);
+            } else {
+                showMessage(data.message, 'error');
+                document.getElementById('pinInput').value = '';
+                document.getElementById('pinInput').focus();
+            }
+        } catch (error) {
+            showMessage('Error validating PIN', 'error');
+            console.error(error);
+        }
+    }
+
+    function showMessage(text, type) {
+        const messageDiv = document.getElementById('message');
+        messageDiv.textContent = text;
+        messageDiv.className = 'message ' + type;
+        messageDiv.style.display = 'block';
+    }
+</script>
+</body>
+</html>

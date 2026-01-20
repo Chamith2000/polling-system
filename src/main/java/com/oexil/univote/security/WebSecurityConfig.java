@@ -49,13 +49,22 @@ public class WebSecurityConfig {
                 .headers(headers -> headers
                         .frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin)
                 )
+                // CSRF Configuration - Disable only for voting endpoints
+                .csrf(csrf -> csrf
+                        .ignoringRequestMatchers("/voting/**") // Disable CSRF for voting module
+                )
+
                 // Session-based authentication
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.ALWAYS))
 
                 // Define access rules
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/**", "/css/**", "/js/**", "/images/**", "/vendors/**", "/files/**").permitAll() // Allow public access to login and static resources
-                        .requestMatchers("/public/student/**").permitAll() // Allow public access to student
+                        .requestMatchers("/public/student/**").permitAll()// Allow public access to student
+                        .requestMatchers("/voting/**").permitAll() // Allow public access to voting module
+                        .requestMatchers("/ws-voting/**").permitAll() // Allow WebSocket connections
+                        .requestMatchers("/dashboard/voting").authenticated() // Voting dashboard needs login
+                        .requestMatchers("/admin/**").hasAnyRole("ADMIN", "MANAGER") // Admin pages require ADMIN or MANAGER role
                         .anyRequest().authenticated() // Protect all other URLs
                 )
 

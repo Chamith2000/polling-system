@@ -7,4 +7,5 @@ import java.util.Optional;
 
 @Repository
 public interface StudentRepository extends JpaRepository<Student, String> {
+    Optional<Student> findByStudentId(String studentId);
 }

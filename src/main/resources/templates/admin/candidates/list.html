@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" xmlns:th="http://www.w3.org/1999/xhtml" layout:decorate="~{layout}">
+<head><title>Manage Candidates</title></head>
+<body>
+<div layout:fragment="content">
+    <div class="row"><div class="col-12"><div class="card"><div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h4 class="card-title mb-0"><i class="mdi mdi-account-star"></i> Manage Candidates</h4>
+            <a th:href="@{/admin/candidates/create}" class="btn btn-primary"><i class="mdi mdi-plus"></i> Add Candidate</a>
+        </div>
+        <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show"><strong>Success!</strong> <span th:text="${successMessage}"></span><button type="button" class="close" data-dismiss="alert">&times;</button></div>
+        <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show"><strong>Error!</strong> <span th:text="${errorMessage}"></span><button type="button" class="close" data-dismiss="alert">&times;</button></div>
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead><tr><th>ID</th><th>Student</th><th>Position</th><th>Faculty</th><th>Description</th><th>Actions</th></tr></thead>
+                <tbody>
+                <tr th:if="${candidates.empty}"><td colspan="6" class="text-center text-muted">No candidates found</td></tr>
+                <tr th:each="candidate : ${candidates}">
+                    <td th:text="${candidate.id}">1</td>
+                    <td><strong th:text="${candidate.student.fullName}">John Doe</strong><br/><small class="text-muted" th:text="${candidate.student.studentId}">ENG001</small></td>
+                    <td><span class="badge badge-info" th:text="${candidate.position.name}">President</span></td>
+                    <td><span th:if="${candidate.faculty}" class="badge badge-secondary" th:text="${candidate.faculty.name}">Engineering</span><span th:unless="${candidate.faculty}" class="badge badge-success">Common</span></td>
+                    <td><small th:text="${candidate.description}">Description</small></td>
+                    <td>
+                        <a th:href="@{/admin/candidates/edit/{id}(id=${candidate.id})}" class="btn btn-sm btn-warning"><i class="mdi mdi-pencil"></i> Edit</a>
+                        <form th:action="@{/admin/candidates/delete/{id}(id=${candidate.id})}" method="post" style="display:inline;" onsubmit="return confirm('Delete this candidate?');"><button type="submit" class="btn btn-sm btn-danger"><i class="mdi mdi-delete"></i> Delete</button></form>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div></div></div></div>
+</div>
+</body>
+</html>
