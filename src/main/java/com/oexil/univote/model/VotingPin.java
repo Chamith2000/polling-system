@@ -1,20 +1,18 @@
 package com.oexil.univote.model;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 import java.time.LocalDateTime;
 
 @Entity
-@Getter
-@Setter
 @Table(name = "voting_pin")
+@Data
 public class VotingPin {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "pin_value", nullable = false)
+    @Column(name = "pin_value", nullable = false, length = 10)
     private String pinValue;
 
     @Column(name = "active_from")
@@ -24,5 +22,8 @@ public class VotingPin {
     private LocalDateTime activeUntil;
 
     @Column(name = "is_active")
-    private boolean isActive;
+    private Boolean isActive = true;
+
+    @Column(name = "created_at")
+    private LocalDateTime createdAt = LocalDateTime.now();
 }

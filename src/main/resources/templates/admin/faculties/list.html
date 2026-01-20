@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:th="http://www.w3.org/1999/xhtml"
+      layout:decorate="~{layout}">
+
+<head>
+    <title>Manage Faculties</title>
+</head>
+
+<body>
+<div layout:fragment="content">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h4 class="card-title mb-0">
+                            <i class="mdi mdi-school"></i> Manage Faculties
+                        </h4>
+                        <a th:href="@{/admin/faculties/create}" class="btn btn-primary">
+                            <i class="mdi mdi-plus"></i> Add Faculty
+                        </a>
+                    </div>
+
+                    <!-- Success/Error Messages -->
+                    <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+                        <strong>Success!</strong> <span th:text="${successMessage}"></span>
+                        <button type="button" class="close" data-dismiss="alert">&times;</button>
+                    </div>
+
+                    <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <strong>Error!</strong> <span th:text="${errorMessage}"></span>
+                        <button type="button" class="close" data-dismiss="alert">&times;</button>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Code</th>
+                                <th>Color</th>
+                                <th>Created At</th>
+                                <th>Actions</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:if="${faculties.empty}">
+                                <td colspan="6" class="text-center text-muted">No faculties found</td>
+                            </tr>
+                            <tr th:each="faculty : ${faculties}">
+                                <td th:text="${faculty.id}">1</td>
+                                <td th:text="${faculty.name}">Engineering</td>
+                                <td>
+                                    <span class="badge badge-secondary" th:text="${faculty.code}">ENG</span>
+                                </td>
+                                <td>
+                                            <span class="badge" th:style="'background-color: ' + ${faculty.colorCode} + '; color: white;'"
+                                                  th:text="${faculty.colorCode}">#1E40AF</span>
+                                </td>
+                                <td th:text="${#temporals.format(faculty.createdAt, 'yyyy-MM-dd HH:mm')}">2025-01-20</td>
+                                <td>
+                                    <a th:href="@{/admin/faculties/edit/{id}(id=${faculty.id})}"
+                                       class="btn btn-sm btn-warning">
+                                        <i class="mdi mdi-pencil"></i> Edit
+                                    </a>
+                                    <form th:action="@{/admin/faculties/delete/{id}(id=${faculty.id})}"
+                                          method="post" style="display: inline;"
+                                          onsubmit="return confirm('Are you sure you want to delete this faculty?');">
+                                        <button type="submit" class="btn btn-sm btn-danger">
+                                            <i class="mdi mdi-delete"></i> Delete
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

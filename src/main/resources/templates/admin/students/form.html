@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" xmlns:th="http://www.w3.org/1999/xhtml" layout:decorate="~{layout}">
+<head><title th:text="${pageTitle}">Student Form</title></head>
+<body>
+<div layout:fragment="content">
+    <div class="row"><div class="col-md-8 offset-md-2"><div class="card"><div class="card-body">
+        <h4 class="card-title" th:text="${pageTitle}">Create Student</h4>
+        <form th:action="@{${isEdit ? '/admin/students/edit/' + student.studentId : '/admin/students/create'}}" th:object="${student}" method="post">
+            <div class="form-group">
+                <label for="studentId">Student ID <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="studentId" th:field="*{studentId}" required placeholder="e.g., ENG001" th:readonly="${isEdit}">
+            </div>
+            <div class="form-group">
+                <label for="fullName">Full Name <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="fullName" th:field="*{fullName}" required placeholder="e.g., John Doe">
+            </div>
+            <div class="form-group">
+                <label for="faculty">Faculty <span class="text-danger">*</span></label>
+                <select class="form-control" id="faculty" th:field="*{faculty.id}" required>
+                    <option value="">Select Faculty</option>
+                    <option th:each="faculty : ${faculties}" th:value="${faculty.id}" th:text="${faculty.name}">Engineering</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" class="form-control" id="email" th:field="*{email}" placeholder="student@example.com">
+            </div>
+            <div class="form-group">
+                <label for="year">Year</label>
+                <input type="number" class="form-control" id="year" th:field="*{year}" min="1" max="5" placeholder="1">
+            </div>
+            <div class="form-group">
+                <button type="submit" class="btn btn-primary"><i class="mdi mdi-content-save"></i> <span th:text="${isEdit ? 'Update' : 'Create'}">Save</span></button>
+                <a th:href="@{/admin/students}" class="btn btn-secondary"><i class="mdi mdi-cancel"></i> Cancel</a>
+            </div>
+        </form>
+    </div></div></div></div>
+</div>
+</body>
+</html>

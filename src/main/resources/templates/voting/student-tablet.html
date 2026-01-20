@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${stationName} + ' - Voting Tablet'">Voting Tablet</title>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+        }
+
+        /* Waiting Screen */
+        .waiting-screen {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .waiting-icon {
+            font-size: 8em;
+            margin-bottom: 30px;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .waiting-screen h1 {
+            font-size: 3em;
+            margin-bottom: 20px;
+        }
+
+        .waiting-screen p {
+            font-size: 1.5em;
+            opacity: 0.9;
+        }
+
+        .connection-status {
+            margin-top: 40px;
+            padding: 15px 30px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 25px;
+            font-size: 1.1em;
+        }
+
+        /* Voting Screen */
+        .voting-screen {
+            display: none;
+        }
+
+        .header {
+            background: white;
+            padding: 20px 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-left h1 {
+            font-size: 1.8em;
+            color: #333;
+        }
+
+        .student-info {
+            color: #666;
+            font-size: 0.95em;
+            margin-top: 5px;
+        }
+
+        .faculty-badge {
+            padding: 8px 20px;
+            border-radius: 20px;
+            color: white;
+            font-weight: 600;
+            font-size: 0.95em;
+        }
+
+        .progress-bar {
+            background: white;
+            padding: 15px 30px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .progress-text {
+            text-align: center;
+            color: #666;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+        }
+
+        .progress-track {
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #11998e 0%, #38ef7d 100%);
+            transition: width 0.3s ease;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        .position-card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            display: none;
+        }
+
+        .position-card.active {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .position-header {
+            border-bottom: 3px solid #11998e;
+            padding-bottom: 15px;
+            margin-bottom: 30px;
+        }
+
+        .position-title {
+            font-size: 2em;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .position-type {
+            color: #666;
+            font-size: 0.95em;
+        }
+
+        .candidates-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .candidate-card {
+            border: 3px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+        }
+
+        .candidate-card:hover {
+            border-color: #11998e;
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(17, 153, 142, 0.2);
+        }
+
+        .candidate-card.selected {
+            border-color: #11998e;
+            background: linear-gradient(135deg, rgba(17, 153, 142, 0.1) 0%, rgba(56, 239, 125, 0.1) 100%);
+        }
+
+        .candidate-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            margin: 0 auto 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5em;
+        }
+
+        .candidate-name {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .candidate-id {
+            color: #999;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+        }
+
+        .candidate-desc {
+            color: #666;
+            font-size: 0.85em;
+            line-height: 1.4;
+        }
+
+        .button-container {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 18px;
+            font-size: 1.1em;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-next {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+        }
+
+        .btn-next:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(17, 153, 142, 0.3);
+        }
+
+        .btn-back {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-back:hover {
+            background: #5a6268;
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .summary-card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            display: none;
+        }
+
+        .summary-card.active {
+            display: block;
+        }
+
+        .summary-title {
+            font-size: 2em;
+            color: #333;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .summary-subtitle {
+            color: #666;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .summary-item {
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .summary-position {
+            font-weight: 600;
+            color: #333;
+            font-size: 1.1em;
+        }
+
+        .summary-candidate {
+            color: #11998e;
+            font-weight: 600;
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 20px;
+            font-size: 1.3em;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-top: 20px;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(245, 87, 108, 0.4);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            text-align: center;
+            max-width: 400px;
+        }
+
+        .modal-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-size: 1.5em;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .modal-text {
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 15px;
+        }
+
+        .modal-btn {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1em;
+        }
+
+        .modal-btn-confirm {
+            background: #11998e;
+            color: white;
+        }
+
+        .modal-btn-cancel {
+            background: #e0e0e0;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+<!-- Waiting Screen -->
+<div class="waiting-screen" id="waitingScreen">
+    <div class="waiting-icon">🗳️</div>
+    <h1>Waiting for Student...</h1>
+    <p th:text="${stationName}">Faculty Station</p>
+    <div class="connection-status" id="connectionStatus">
+        🔴 Connecting to operator station...
+    </div>
+</div>
+
+<!-- Voting Screen (hidden initially) -->
+<div class="voting-screen" id="votingScreen">
+    <div class="header">
+        <div class="header-left">
+            <h1>University Voting System</h1>
+            <div class="student-info" id="studentInfo"></div>
+        </div>
+        <div class="faculty-badge" id="facultyBadge"></div>
+    </div>
+
+    <div class="progress-bar">
+        <div class="progress-text">
+            <span id="progressText">Position 1 of 7</span>
+        </div>
+        <div class="progress-track">
+            <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+        </div>
+    </div>
+
+    <div class="container" id="ballotContainer"></div>
+</div>
+
+<!-- Confirmation Modal -->
+<div class="modal" id="confirmModal">
+    <div class="modal-content">
+        <div class="modal-icon">⚠️</div>
+        <h3 class="modal-title">Confirm Your Selection</h3>
+        <p class="modal-text" id="modalText">Are you sure you want to vote for this candidate?</p>
+        <div class="modal-buttons">
+            <button class="modal-btn modal-btn-cancel" onclick="closeModal()">Cancel</button>
+            <button class="modal-btn modal-btn-confirm" onclick="confirmSelection()">Confirm</button>
+        </div>
+    </div>
+</div>
+
+<!-- Submit Confirmation Modal -->
+<div class="modal" id="submitModal">
+    <div class="modal-content">
+        <div class="modal-icon">🗳️</div>
+        <h3 class="modal-title">Submit Your Vote</h3>
+        <p class="modal-text">Once submitted, you cannot change your vote. Are you sure?</p>
+        <div class="modal-buttons">
+            <button class="modal-btn modal-btn-cancel" onclick="closeSubmitModal()">Cancel</button>
+            <button class="modal-btn modal-btn-confirm" onclick="submitVotes()">Submit Vote</button>
+        </div>
+    </div>
+</div>
+
+<script th:inline="javascript">
+    const stationId = /*[[${stationId}]]*/ 'ENG';
+    let stompClient = null;
+    let sessionData = null;
+    let positions = [];
+    let currentStep = 0;
+    let selectedVotes = {};
+    let pendingSelection = null;
+
+    // Connect to WebSocket
+    function connect() {
+        const socket = new SockJS('/ws-voting');
+        stompClient = Stomp.over(socket);
+
+        stompClient.connect({}, function(frame) {
+            console.log('Connected: ' + frame);
+            document.getElementById('connectionStatus').innerHTML = '🟢 Connected to operator station';
+
+            // Subscribe to this station's channel
+            stompClient.subscribe('/topic/station/' + stationId, function(message) {
+                const data = JSON.parse(message.body);
+                handleStationMessage(data);
+            });
+        });
+    }
+
+    // Handle messages from operator
+    function handleStationMessage(data) {
+        if (data.action === 'ACTIVATE_BALLOT') {
+            sessionData = data.session;
+            positions = sessionData.positions || [];
+            activateVotingScreen();
+        } else if (data.action === 'RESET_BALLOT') {
+            resetToWaiting();
+        }
+    }
+
+    // Activate voting screen
+    function activateVotingScreen() {
+        document.getElementById('waitingScreen').style.display = 'none';
+        document.getElementById('votingScreen').style.display = 'block';
+
+        // Set student info
+        document.getElementById('studentInfo').innerHTML =
+            `<span>Student: ${sessionData.studentName}</span> | <span>ID: ${sessionData.studentId}</span>`;
+
+        // Set faculty badge
+        const badge = document.getElementById('facultyBadge');
+        badge.textContent = sessionData.facultyName;
+        badge.style.backgroundColor = sessionData.facultyColor;
+
+        // Build ballot
+        buildBallot();
+        currentStep = 0;
+        selectedVotes = {};
+        updateProgress();
+    }
+
+    // Build ballot from session data
+    function buildBallot() {
+        const container = document.getElementById('ballotContainer');
+        container.innerHTML = '';
+
+        // Create position cards
+        positions.forEach((position, index) => {
+            const positionCard = document.createElement('div');
+            positionCard.className = 'position-card' + (index === 0 ? ' active' : '');
+            positionCard.id = 'position-' + position.id;
+
+            positionCard.innerHTML = `
+                    <div class="position-header">
+                        <h2 class="position-title">${position.name}</h2>
+                        <p class="position-type">${position.isCommon ? 'Common Position' : sessionData.facultyName + ' Position'}</p>
+                    </div>
+
+                    <div class="candidates-grid" id="candidates-${position.id}">
+                        ${position.candidates.map(c => `
+                            <div class="candidate-card"
+                                 data-candidate-id="${c.id}"
+                                 data-position-id="${position.id}"
+                                 onclick="selectCandidate(${position.id}, ${c.id})">
+                                <div class="candidate-icon">👤</div>
+                                <div class="candidate-name">${c.studentName}</div>
+                                <div class="candidate-id">${c.studentId}</div>
+                                <div class="candidate-desc">${c.description || 'No description'}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+
+                    <div class="button-container">
+                        <button class="btn btn-back" onclick="previousPosition()" ${index === 0 ? 'disabled' : ''}>
+                            ← Previous
+                        </button>
+                        <button class="btn btn-next" id="btn-next-${position.id}" onclick="nextPosition()" disabled>
+                            Next →
+                        </button>
+                    </div>
+                `;
+
+            container.appendChild(positionCard);
+        });
+
+        // Add summary card
+        const summaryCard = document.createElement('div');
+        summaryCard.className = 'summary-card';
+        summaryCard.id = 'summaryCard';
+        summaryCard.innerHTML = `
+                <h2 class="summary-title">Review Your Votes</h2>
+                <p class="summary-subtitle">Please review your selections before submitting</p>
+                <div id="summaryList"></div>
+                <div class="button-container">
+                    <button class="btn btn-back" onclick="editVotes()">← Edit Votes</button>
+                    <button class="btn-submit" onclick="showSubmitConfirmation()">Submit My Vote</button>
+                </div>
+            `;
+        container.appendChild(summaryCard);
+    }
+
+    function selectCandidate(positionId, candidateId) {
+        pendingSelection = { positionId, candidateId };
+        const candidate = positions.find(p => p.id === positionId)
+            .candidates.find(c => c.id === candidateId);
+
+        document.getElementById('modalText').textContent =
+            `Are you sure you want to vote for ${candidate.studentName} for this position?`;
+        document.getElementById('confirmModal').classList.add('active');
+    }
+
+    function confirmSelection() {
+        if (!pendingSelection) return;
+
+        const { positionId, candidateId } = pendingSelection;
+
+        // Clear previous selection
+        document.querySelectorAll(`[data-position-id="${positionId}"]`).forEach(card => {
+            card.classList.remove('selected');
+        });
+
+        // Mark new selection
+        const selectedCard = document.querySelector(
+            `[data-position-id="${positionId}"][data-candidate-id="${candidateId}"]`
+        );
+        selectedCard.classList.add('selected');
+
+        // Save selection
+        selectedVotes[positionId] = candidateId;
+
+        // Enable next button
+        document.getElementById(`btn-next-${positionId}`).disabled = false;
+
+        closeModal();
+    }
+
+    function closeModal() {
+        document.getElementById('confirmModal').classList.remove('active');
+        pendingSelection = null;
+    }
+
+    function nextPosition() {
+        if (currentStep < positions.length - 1) {
+            document.getElementById(`position-${positions[currentStep].id}`).classList.remove('active');
+            currentStep++;
+            document.getElementById(`position-${positions[currentStep].id}`).classList.add('active');
+            updateProgress();
+        } else {
+            showSummary();
+        }
+    }
+
+    function previousPosition() {
+        if (currentStep > 0) {
+            document.getElementById(`position-${positions[currentStep].id}`).classList.remove('active');
+            currentStep--;
+            document.getElementById(`position-${positions[currentStep].id}`).classList.add('active');
+            updateProgress();
+        }
+    }
+
+    function updateProgress() {
+        const progress = ((currentStep + 1) / positions.length) * 100;
+        document.getElementById('progressFill').style.width = progress + '%';
+        document.getElementById('progressText').textContent =
+            `Position ${currentStep + 1} of ${positions.length}`;
+    }
+
+    function showSummary() {
+        document.querySelectorAll('.position-card').forEach(card => {
+            card.classList.remove('active');
+        });
+
+        const summaryList = document.getElementById('summaryList');
+        summaryList.innerHTML = '';
+
+        positions.forEach(position => {
+            const candidateId = selectedVotes[position.id];
+            const candidate = position.candidates.find(c => c.id === candidateId);
+
+            const item = document.createElement('div');
+            item.className = 'summary-item';
+            item.innerHTML = `
+                    <span class="summary-position">${position.name}</span>
+                    <span class="summary-candidate">${candidate.studentName} (${candidate.studentId})</span>
+                `;
+            summaryList.appendChild(item);
+        });
+
+        document.getElementById('summaryCard').classList.add('active');
+        document.getElementById('progressFill').style.width = '100%';
+        document.getElementById('progressText').textContent = 'Review Your Votes';
+    }
+
+    function editVotes() {
+        document.getElementById('summaryCard').classList.remove('active');
+        currentStep = 0;
+        document.getElementById(`position-${positions[0].id}`).classList.add('active');
+        updateProgress();
+    }
+
+    function showSubmitConfirmation() {
+        document.getElementById('submitModal').classList.add('active');
+    }
+
+    function closeSubmitModal() {
+        document.getElementById('submitModal').classList.remove('active');
+    }
+
+    async function submitVotes() {
+        try {
+            const response = await fetch('/voting/submit-votes?stationId=' + stationId, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    studentId: sessionData.studentId,
+                    votes: selectedVotes
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                alert('✅ Vote submitted successfully! Thank you for voting.');
+                resetToWaiting();
+            } else {
+                alert('❌ Error: ' + data.message);
+            }
+        } catch (error) {
+            alert('❌ Error submitting vote');
+            console.error(error);
+        }
+    }
+
+    function resetToWaiting() {
+        document.getElementById('votingScreen').style.display = 'none';
+        document.getElementById('waitingScreen').style.display = 'flex';
+        sessionData = null;
+        positions = [];
+        currentStep = 0;
+        selectedVotes = {};
+        closeSubmitModal();
+    }
+
+    // Initialize connection on page load
+    window.onload = function() {
+        connect();
+    };
+</script>
+</body>
+</html>

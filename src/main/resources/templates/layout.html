@@ -62,6 +62,50 @@
                         <span class="menu-title">Home</span>
                     </a>
                 </li>
+                <!-- Voting System -->
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/dashboard/voting}">
+                        <i class="menu-icon mdi mdi-vote"></i>
+                        <span class="menu-title">Voting System</span>
+                        <span class="badge badge-primary ml-auto">New</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-toggle="collapse" href="#votingAdmin" aria-expanded="false">
+                        <i class="menu-icon mdi mdi-settings"></i>
+                        <span class="menu-title">Voting Admin</span>
+                        <i class="menu-arrow"></i>
+                    </a>
+                    <div class="collapse" id="votingAdmin">
+                        <ul class="nav flex-column sub-menu">
+                            <li class="nav-item">
+                                <a class="nav-link" th:href="@{/admin/faculties}">
+                                    <i class="mdi mdi-school"></i> Faculties
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" th:href="@{/admin/positions}">
+                                    <i class="mdi mdi-account-star"></i> Positions
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" th:href="@{/admin/students}">
+                                    <i class="mdi mdi-account-multiple"></i> Students
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" th:href="@{/admin/candidates}">
+                                    <i class="mdi mdi-account-box"></i> Candidates
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" th:href="@{/admin/voting-pins}">
+                                    <i class="mdi mdi-lock"></i> Voting PINs
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </li>
             </ul>
         </nav>
 

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" xmlns:th="http://www.w3.org/1999/xhtml" layout:decorate="~{layout}">
+<head><title>Manage Voting PINs</title></head>
+<body>
+<div layout:fragment="content">
+  <div class="row"><div class="col-12"><div class="card"><div class="card-body">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h4 class="card-title mb-0"><i class="mdi mdi-lock"></i> Manage Voting PINs</h4>
+      <a th:href="@{/admin/voting-pins/create}" class="btn btn-primary"><i class="mdi mdi-plus"></i> Add PIN</a>
+    </div>
+    <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show"><strong>Success!</strong> <span th:text="${successMessage}"></span><button type="button" class="close" data-dismiss="alert">&times;</button></div>
+    <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show"><strong>Error!</strong> <span th:text="${errorMessage}"></span><button type="button" class="close" data-dismiss="alert">&times;</button></div>
+    <div class="table-responsive">
+      <table class="table table-hover">
+        <thead><tr><th>PIN Value</th><th>Status</th><th>Active From</th><th>Active Until</th><th>Actions</th></tr></thead>
+        <tbody>
+        <tr th:if="${pins.empty}"><td colspan="5" class="text-center text-muted">No PINs found</td></tr>
+        <tr th:each="pin : ${pins}">
+          <td><code class="h5" th:text="${pin.pinValue}">2025</code></td>
+          <td>
+            <form th:action="@{/admin/voting-pins/toggle-active/{id}(id=${pin.id})}" method="post" style="display:inline;">
+              <button type="submit" class="btn btn-sm" th:classappend="${pin.isActive ? 'btn-success' : 'btn-secondary'}">
+                <i class="mdi" th:classappend="${pin.isActive ? 'mdi-check-circle' : 'mdi-close-circle'}"></i>
+                <span th:text="${pin.isActive ? 'Active' : 'Inactive'}">Active</span>
+              </button>
+            </form>
+          </td>
+          <td th:text="${#temporals.format(pin.activeFrom, 'yyyy-MM-dd HH:mm')}">2025-01-20 08:00</td>
+          <td th:text="${#temporals.format(pin.activeUntil, 'yyyy-MM-dd HH:mm')}">2025-01-27 18:00</td>
+          <td>
+            <a th:href="@{/admin/voting-pins/edit/{id}(id=${pin.id})}" class="btn btn-sm btn-warning"><i class="mdi mdi-pencil"></i> Edit</a>
+            <form th:action="@{/admin/voting-pins/delete/{id}(id=${pin.id})}" method="post" style="display:inline;" onsubmit="return confirm('Delete this PIN?');"><button type="submit" class="btn btn-sm btn-danger"><i class="mdi mdi-delete"></i> Delete</button></form>
+          </td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+  </div></div></div></div>
+</div>
+</body>
+</html>
