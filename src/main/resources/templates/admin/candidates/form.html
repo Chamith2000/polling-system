@@ -1,65 +1,217 @@
 <!DOCTYPE html>
 <html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" xmlns:th="http://www.w3.org/1999/xhtml" layout:decorate="~{layout}">
-<head><title th:text="${pageTitle}">Candidate Form</title></head>
+<head>
+    <title th:text="${pageTitle}">Candidate Form</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
+</head>
 <body>
 <div layout:fragment="content">
-    <div class="row"><div class="col-md-8 offset-md-2"><div class="card"><div class="card-body">
-        <h4 class="card-title" th:text="${pageTitle}">Create Candidate</h4>
-        <form th:action="@{${isEdit ? '/admin/candidates/edit/' + candidate.id : '/admin/candidates/create'}}" th:object="${candidate}" method="post">
-            <div class="form-group">
-                <label for="studentId">Student <span class="text-danger">*</span></label>
-                <select class="form-control" id="studentId" name="studentId" required>
-                    <option value="">Select Student</option>
-                    <option th:each="student : ${students}"
-                            th:value="${student.studentId}"
-                            th:text="${student.fullName + ' (' + student.studentId + ')'}"
-                            th:selected="${isEdit and candidate.student.studentId == student.studentId}">John Doe (ENG001)</option>
-                </select>
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="card-title" th:text="${pageTitle}">Create Candidate</h4>
+
+                    <form th:action="@{${isEdit ? '/admin/candidates/edit/' + candidate.id : '/admin/candidates/create'}}"
+                          th:object="${candidate}"
+                          method="post"
+                          enctype="multipart/form-data">
+
+                        <div class="text-center mb-4">
+                            <div class="position-relative d-inline-block" style="width: 150px; height: 150px;">
+                                <div class="rounded-circle bg-light d-flex align-items-center justify-content-center"
+                                     style="width: 150px; height: 150px; border: 3px dashed #ccc; position: relative; overflow: hidden;">
+                                    <i id="cameraIcon" class="mdi mdi-camera"
+                                       style="font-size: 48px; color: #aaa; position: absolute; z-index: 1;"
+                                       th:style="${candidate.imageUrl != null} ? 'display:none;' : 'font-size: 48px; color: #aaa; position: absolute; z-index: 1;'"></i>
+
+                                    <img id="imagePreview"
+                                         th:src="@{${candidate.imageUrl != null ? candidate.imageUrl : ''}}"
+                                         class="rounded-circle"
+                                         style="width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; z-index: 2;"
+                                         th:style="${candidate.imageUrl == null} ? 'display:none;' : 'width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; z-index: 2;'">
+                                </div>
+                            </div>
+                            <p class="text-muted mt-2 small">Candidate Photo</p>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Upload Photo</label>
+                            <div class="custom-file">
+                                <input type="file" class="custom-file-input" id="image" name="image" accept="image/*" onchange="previewImage(this)">
+                                <label class="custom-file-label" for="image">Choose new photo...</label>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="studentId">Student <span class="text-danger">*</span></label>
+                            <select class="form-control" id="studentId" name="studentId" required>
+                                <option value="">Select Student</option>
+                                <option th:each="student : ${students}"
+                                        th:value="${student.studentId}"
+                                        th:text="${student.fullName + ' (' + student.studentId + ')'}"
+                                        th:selected="${isEdit and candidate.student.studentId == student.studentId}">John Doe (ENG001)</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="positionId">Position <span class="text-danger">*</span></label>
+                            <select class="form-control" id="positionId" name="positionId" required onchange="toggleFacultyField()">
+                                <option value="">Select Position</option>
+                                <option th:each="position : ${positions}"
+                                        th:value="${position.id}"
+                                        th:text="${position.name + (position.isCommon ? ' (Common)' : ' (Faculty)')}"
+                                        th:attr="data-common=${position.isCommon}"
+                                        th:selected="${isEdit and candidate.position.id == position.id}">President</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group" id="facultyGroup" style="display:none;">
+                            <label for="facultyId">Faculty <span class="text-danger">*</span></label>
+                            <select class="form-control" id="facultyId" name="facultyId">
+                                <option value="">Select Faculty</option>
+                                <option th:each="faculty : ${faculties}"
+                                        th:value="${faculty.id}"
+                                        th:text="${faculty.name}"
+                                        th:selected="${isEdit and candidate.faculty != null and candidate.faculty.id == faculty.id}">Engineering</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="description">Description</label>
+                            <textarea class="form-control" id="description" th:field="*{description}" rows="3" placeholder="Brief description about the candidate"></textarea>
+                        </div>
+
+                        <div class="form-group mt-4">
+                            <button type="submit" class="btn btn-primary"><i class="mdi mdi-content-save"></i> <span th:text="${isEdit ? 'Update' : 'Create'}">Save</span></button>
+                            <a th:href="@{/admin/candidates}" class="btn btn-secondary"><i class="mdi mdi-cancel"></i> Cancel</a>
+                        </div>
+                    </form>
+                </div>
             </div>
-            <div class="form-group">
-                <label for="positionId">Position <span class="text-danger">*</span></label>
-                <select class="form-control" id="positionId" name="positionId" required onchange="toggleFacultyField()">
-                    <option value="">Select Position</option>
-                    <option th:each="position : ${positions}"
-                            th:value="${position.id}"
-                            th:text="${position.name + (position.isCommon ? ' (Common)' : ' (Faculty)')}"
-                            th:attr="data-common=${position.isCommon}"
-                            th:selected="${isEdit and candidate.position.id == position.id}">President</option>
-                </select>
+        </div>
+    </div>
+
+    <!-- Modal for Image Cropping -->
+    <div class="modal fade" id="cropModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Crop Image</h5>
+                    <button type="button" class="close" data-dismiss="modal">
+                        <span>&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="img-container" style="max-height: 500px;">
+                        <img id="cropImage" style="max-width: 100%;">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="cropButton">Crop & Save</button>
+                </div>
             </div>
-            <div class="form-group" id="facultyGroup" style="display:none;">
-                <label for="facultyId">Faculty <span class="text-danger">*</span></label>
-                <select class="form-control" id="facultyId" name="facultyId">
-                    <option value="">Select Faculty</option>
-                    <option th:each="faculty : ${faculties}"
-                            th:value="${faculty.id}"
-                            th:text="${faculty.name}"
-                            th:selected="${isEdit and candidate.faculty != null and candidate.faculty.id == faculty.id}">Engineering</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="description">Description</label>
-                <textarea class="form-control" id="description" th:field="*{description}" rows="3" placeholder="Brief description about the candidate"></textarea>
-            </div>
-            <div class="form-group">
-                <label for="imageUrl">Image URL</label>
-                <input type="text" class="form-control" id="imageUrl" th:field="*{imageUrl}" placeholder="/images/candidates/photo.jpg">
-                <small class="form-text text-muted">Optional: URL to candidate's photo</small>
-            </div>
-            <div class="form-group">
-                <button type="submit" class="btn btn-primary"><i class="mdi mdi-content-save"></i> <span th:text="${isEdit ? 'Update' : 'Create'}">Save</span></button>
-                <a th:href="@{/admin/candidates}" class="btn btn-secondary"><i class="mdi mdi-cancel"></i> Cancel</a>
-            </div>
-        </form>
-    </div></div></div></div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
     <script>
+        let cropper;
+        let croppedImageBlob;
+
         function toggleFacultyField() {
             const select = document.getElementById('positionId');
             const option = select.options[select.selectedIndex];
+            if (!option || !option.hasAttribute('data-common')) return;
+
             const isCommon = option.getAttribute('data-common') === 'true';
             document.getElementById('facultyGroup').style.display = isCommon ? 'none' : 'block';
             document.getElementById('facultyId').required = !isCommon;
         }
+
+        function previewImage(input) {
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                const reader = new FileReader();
+
+                reader.onload = function(e) {
+                    const image = document.getElementById('cropImage');
+                    image.src = e.target.result;
+
+                    // Show modal
+                    $('#cropModal').modal('show');
+
+                    // Initialize cropper when modal is shown
+                    $('#cropModal').on('shown.bs.modal', function() {
+                        if (cropper) {
+                            cropper.destroy();
+                        }
+                        cropper = new Cropper(image, {
+                            aspectRatio: 1,
+                            viewMode: 2,
+                            dragMode: 'move',
+                            autoCropArea: 1,
+                            restore: false,
+                            guides: true,
+                            center: true,
+                            highlight: false,
+                            cropBoxMovable: true,
+                            cropBoxResizable: true,
+                            toggleDragModeOnDblclick: false,
+                        });
+                    });
+                }
+
+                reader.readAsDataURL(file);
+                input.nextElementSibling.innerText = file.name;
+            }
+        }
+
+        document.getElementById('cropButton').addEventListener('click', function() {
+            if (cropper) {
+                const canvas = cropper.getCroppedCanvas({
+                    width: 400,
+                    height: 400,
+                    imageSmoothingEnabled: true,
+                    imageSmoothingQuality: 'high',
+                });
+
+                canvas.toBlob(function(blob) {
+                    croppedImageBlob = blob;
+
+                    // Update preview in the circle
+                    const cameraIcon = document.getElementById('cameraIcon');
+                    if(cameraIcon) cameraIcon.style.display = 'none';
+
+                    const preview = document.getElementById('imagePreview');
+                    preview.src = canvas.toDataURL();
+                    preview.style.display = 'block';
+
+                    // Create a new File object from the blob
+                    const file = new File([blob], 'cropped-image.jpg', { type: 'image/jpeg' });
+
+                    // Update the file input
+                    const dataTransfer = new DataTransfer();
+                    dataTransfer.items.add(file);
+                    document.getElementById('image').files = dataTransfer.files;
+
+                    // Close modal
+                    $('#cropModal').modal('hide');
+                    cropper.destroy();
+                    cropper = null;
+                }, 'image/jpeg', 0.9);
+            }
+        });
+
+        // Clean up cropper when modal is closed
+        $('#cropModal').on('hidden.bs.modal', function() {
+            if (cropper) {
+                cropper.destroy();
+                cropper = null;
+            }
+        });
+
         document.addEventListener('DOMContentLoaded', toggleFacultyField);
     </script>
 </div>

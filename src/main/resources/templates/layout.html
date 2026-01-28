@@ -13,11 +13,37 @@
     <link rel="stylesheet" th:href="@{/vendors/css/vendor.bundle.addons.css}">
     <link rel="stylesheet" th:href="@{/css/style.css}">
     <link rel="shortcut icon" th:href="@{/images/favicon.ico}" />
+
+    <style>
+        /* Apply styles only for Desktop View (Large Screens) */
+        @media (min-width: 992px) {
+            /* Fix the sidebar in place so it doesn't scroll with the page */
+            .sidebar {
+                position: fixed;
+                top: 63px; /* Offset by the height of the Navbar */
+                bottom: 0;
+                width: 260px; /* Fixed width for the sidebar */
+                overflow-y: auto; /* Enable vertical scrolling within the sidebar if content is too long */
+                z-index: 100;
+            }
+
+            /* Push the main content to the right so it doesn't hide behind the sidebar */
+            .main-panel {
+                margin-left: 260px; /* Left margin equal to the sidebar width */
+                width: calc(100% - 260px); /* Calculate remaining width for the content area */
+                min-height: calc(100vh - 63px); /* Ensure content covers full height minus navbar */
+            }
+
+            /* Ensure the footer spans the correct width within the main panel */
+            footer.yellow-line {
+                width: 100%;
+            }
+        }
+    </style>
 </head>
 
 <body>
 <div class="container-scroller">
-    <!-- partial:partials/_navbar.html -->
     <nav class="navbar default-layout col-lg-12 col-12 p-0 fixed-top d-flex flex-row">
         <div class="text-center navbar-brand-wrapper d-flex align-items-top justify-content-center">
             <a class="navbar-brand brand-logo" href="/">
@@ -50,24 +76,13 @@
         </div>
     </nav>
 
-    <!-- partial -->
     <div class="container-fluid page-body-wrapper">
-        <!-- partial:partials/_sidebar.html -->
         <nav class="sidebar sidebar-offcanvas" id="sidebar">
             <ul class="nav">
-                <!-- Dashboard -->
                 <li class="nav-item">
-                    <a class="nav-link" th:href="@{/}">
+                    <a class="nav-link" th:href="@{/dashboard/admin}">
                         <i class="menu-icon mdi mdi-view-dashboard"></i>
                         <span class="menu-title">Home</span>
-                    </a>
-                </li>
-                <!-- Voting System -->
-                <li class="nav-item">
-                    <a class="nav-link" th:href="@{/dashboard/voting}">
-                        <i class="menu-icon mdi mdi-vote"></i>
-                        <span class="menu-title">Voting System</span>
-                        <span class="badge badge-primary ml-auto">New</span>
                     </a>
                 </li>
                 <li class="nav-item">
@@ -103,37 +118,31 @@
                                     <i class="mdi mdi-lock"></i> Voting PINs
                                 </a>
                             </li>
+                            <li class="nav-item">
+                                <a class="nav-link" th:href="@{/admin/results}">
+                                    <i class="mdi mdi-chart-bar"></i> Results
+                                </a>
+                            </li>
                         </ul>
                     </div>
                 </li>
             </ul>
         </nav>
 
-        <!-- partial -->
         <div class="main-panel">
             <div class="content-wrapper" layout:fragment="content">
                 Content is Here!
             </div>
-            <!-- content-wrapper ends -->
-
-            <!-- partial:partials/_footer.html -->
             <footer class="yellow-line">
                 <div class="container-fluid clearfix">
             <span class="text-muted d-block text-center text-sm-left d-sm-inline-block">Copyright © 2026
-              <a href="https://sltc.ac.lk/" target="_blank">SLTC</a>. All rights reserved.</span>
+              <a href="https://sltc.ac.lk/" target="_blank">SLTC IT DEPARTMENT</a>. All rights reserved.</span>
                 </div>
             </footer>
-            <!-- partial -->
         </div>
-        <!-- main-panel ends -->
     </div>
-    <!-- page-body-wrapper ends -->
 </div>
-<!-- container-scroller -->
-
-<!-- plugins:js -->
 <script th:src="@{/vendors/js/vendor.bundle.base.js}"></script>
-<!--<script th:src="@{/vendors/js/vendor.bundle.addons.js}"></script>-->
 <script th:src="@{/js/off-canvas.js}"></script>
 <script th:src="@{/js/misc.js}"></script>
 <script th:src="@{/js/dashboard.js}"></script>

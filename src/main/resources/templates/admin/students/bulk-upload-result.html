@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:th="http://www.w3.org/1999/xhtml"
+      layout:decorate="~{layout}">
+<head><title>Bulk Upload Result</title></head>
+<body>
+<div layout:fragment="content">
+  <div class="row">
+    <div class="col-md-10 offset-md-1">
+      <div class="card">
+        <div class="card-body">
+          <h4 class="card-title">
+            <i class="mdi mdi-check-circle"></i> Bulk Upload Result
+          </h4>
+
+          <!-- Success Message -->
+          <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show">
+            <strong>Success!</strong> <span th:text="${successMessage}"></span>
+            <button type="button" class="close" data-dismiss="alert">&times;</button>
+          </div>
+
+          <!-- Warning Message -->
+          <div th:if="${warningMessage}" class="alert alert-warning alert-dismissible fade show">
+            <strong>Warning!</strong> <span th:text="${warningMessage}"></span>
+            <button type="button" class="close" data-dismiss="alert">&times;</button>
+          </div>
+
+          <!-- Summary Cards -->
+          <div class="row mb-4" th:if="${uploadResult}">
+            <div class="col-md-4">
+              <div class="card text-white bg-success">
+                <div class="card-body text-center">
+                  <h2 class="display-4" th:text="${uploadResult.successCount}">0</h2>
+                  <p class="mb-0"><i class="mdi mdi-check-circle"></i> Successfully Added</p>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="card text-white bg-danger">
+                <div class="card-body text-center">
+                  <h2 class="display-4" th:text="${uploadResult.errorCount}">0</h2>
+                  <p class="mb-0"><i class="mdi mdi-alert-circle"></i> Errors</p>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="card text-white bg-warning">
+                <div class="card-body text-center">
+                  <h2 class="display-4" th:text="${uploadResult.skippedCount}">0</h2>
+                  <p class="mb-0"><i class="mdi mdi-skip-next"></i> Skipped</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Success Details -->
+          <div th:if="${uploadResult != null and uploadResult.successCount > 0}" class="card mb-3">
+            <div class="card-header bg-success text-white">
+              <h5 class="mb-0">
+                <i class="mdi mdi-check-circle"></i> Successfully Added Students
+                (<span th:text="${uploadResult.successCount}">0</span>)
+              </h5>
+            </div>
+            <div class="card-body" style="max-height: 300px; overflow-y: auto;">
+              <ul class="list-unstyled mb-0">
+                <li th:each="student : ${uploadResult.successList}" class="mb-1">
+                  <i class="mdi mdi-check text-success"></i>
+                  <span th:text="${student}">ENG001</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Error Details -->
+          <div th:if="${uploadResult != null and uploadResult.errorCount > 0}" class="card mb-3">
+            <div class="card-header bg-danger text-white">
+              <h5 class="mb-0">
+                <i class="mdi mdi-alert-circle"></i> Errors
+                (<span th:text="${uploadResult.errorCount}">0</span>)
+              </h5>
+            </div>
+            <div class="card-body" style="max-height: 300px; overflow-y: auto;">
+              <ul class="list-unstyled mb-0">
+                <li th:each="error : ${uploadResult.errorList}" class="mb-2 text-danger">
+                  <i class="mdi mdi-close-circle"></i>
+                  <span th:text="${error}">Line 5: Error message</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Skipped Details -->
+          <div th:if="${uploadResult != null and uploadResult.skippedCount > 0}" class="card mb-3">
+            <div class="card-header bg-warning text-white">
+              <h5 class="mb-0">
+                <i class="mdi mdi-skip-next"></i> Skipped Students
+                (<span th:text="${uploadResult.skippedCount}">0</span>)
+              </h5>
+            </div>
+            <div class="card-body" style="max-height: 300px; overflow-y: auto;">
+              <ul class="list-unstyled mb-0">
+                <li th:each="skipped : ${uploadResult.skippedList}" class="mb-1 text-warning">
+                  <i class="mdi mdi-information"></i>
+                  <span th:text="${skipped}">Line 10: Already exists</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- No Result -->
+          <div th:if="${uploadResult == null}" class="alert alert-info">
+            <i class="mdi mdi-information"></i>
+            No upload result available. Please try uploading a file.
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="mt-4">
+            <a th:href="@{/admin/students/bulk-upload}" class="btn btn-primary">
+              <i class="mdi mdi-upload"></i> Upload Another File
+            </a>
+            <a th:href="@{/admin/students}" class="btn btn-success">
+              <i class="mdi mdi-view-list"></i> View All Students
+            </a>
+            <button type="button" class="btn btn-secondary" onclick="window.print()">
+              <i class="mdi mdi-printer"></i> Print Report
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

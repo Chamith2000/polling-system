@@ -22,7 +22,26 @@
                         </a>
                     </div>
 
-                    <!-- Success/Error Messages -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <form th:action="@{/admin/faculties}" method="get" class="form-inline">
+                                <div class="input-group" style="width: 100%;">
+                                    <input type="text" name="keyword" class="form-control"
+                                           placeholder="Search by name or code..."
+                                           th:value="${keyword}">
+                                    <div class="input-group-append">
+                                        <button type="submit" class="btn btn-secondary" title="Search">
+                                            <i class="mdi mdi-magnify"></i>
+                                        </button>
+                                        <a th:href="@{/admin/faculties}" class="btn btn-light" title="Clear Search">
+                                            <i class="mdi mdi-refresh"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
                     <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
                         <strong>Success!</strong> <span th:text="${successMessage}"></span>
                         <button type="button" class="close" data-dismiss="alert">&times;</button>
@@ -56,8 +75,8 @@
                                     <span class="badge badge-secondary" th:text="${faculty.code}">ENG</span>
                                 </td>
                                 <td>
-                                            <span class="badge" th:style="'background-color: ' + ${faculty.colorCode} + '; color: white;'"
-                                                  th:text="${faculty.colorCode}">#1E40AF</span>
+                                    <span class="badge" th:style="'background-color: ' + ${faculty.colorCode} + '; color: white;'"
+                                          th:text="${faculty.colorCode}">#1E40AF</span>
                                 </td>
                                 <td th:text="${#temporals.format(faculty.createdAt, 'yyyy-MM-dd HH:mm')}">2025-01-20</td>
                                 <td>
@@ -77,6 +96,24 @@
                             </tbody>
                         </table>
                     </div>
+
+                    <nav aria-label="Page navigation" class="mt-4" th:if="${totalPages > 1}">
+                        <ul class="pagination justify-content-center">
+                            <li class="page-item" th:classappend="${currentPage == 1} ? 'disabled'">
+                                <a class="page-link" th:href="@{/admin/faculties(page=${currentPage - 1}, keyword=${keyword})}">Previous</a>
+                            </li>
+
+                            <li class="page-item" th:each="i : ${#numbers.sequence(1, totalPages)}"
+                                th:classappend="${currentPage == i} ? 'active'">
+                                <a class="page-link" th:href="@{/admin/faculties(page=${i}, keyword=${keyword})}" th:text="${i}">1</a>
+                            </li>
+
+                            <li class="page-item" th:classappend="${currentPage == totalPages} ? 'disabled'">
+                                <a class="page-link" th:href="@{/admin/faculties(page=${currentPage + 1}, keyword=${keyword})}">Next</a>
+                            </li>
+                        </ul>
+                    </nav>
+
                 </div>
             </div>
         </div>

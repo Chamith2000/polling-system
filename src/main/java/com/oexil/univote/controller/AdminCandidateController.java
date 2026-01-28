@@ -1,14 +1,16 @@
 package com.oexil.univote.controller;
 
 import com.oexil.univote.model.Candidate;
-import com.oexil.univote.repository.CandidateRepository;
 import com.oexil.univote.repository.FacultyRepository;
 import com.oexil.univote.repository.PositionRepository;
 import com.oexil.univote.repository.StudentRepository;
+import com.oexil.univote.service.CandidateService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
@@ -16,14 +18,23 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 @RequiredArgsConstructor
 public class AdminCandidateController {
 
-    private final CandidateRepository candidateRepository;
+    private final CandidateService candidateService;
     private final StudentRepository studentRepository;
     private final PositionRepository positionRepository;
     private final FacultyRepository facultyRepository;
 
     @GetMapping
-    public String listCandidates(Model model) {
-        model.addAttribute("candidates", candidateRepository.findAll());
+    public String listCandidates(@RequestParam(defaultValue = "1") int page,
+                                 @RequestParam(required = false) String keyword,
+                                 Model model) {
+        int pageSize = 20;
+        Page<Candidate> candidatePage = candidateService.getAllCandidates(page, pageSize, keyword);
+
+        model.addAttribute("candidates", candidatePage.getContent());
+        model.addAttribute("currentPage", page);
+        model.addAttribute("totalPages", candidatePage.getTotalPages());
+        model.addAttribute("totalItems", candidatePage.getTotalElements());
+        model.addAttribute("keyword", keyword);
         model.addAttribute("pageTitle", "Manage Candidates");
         return "admin/candidates/list";
     }
@@ -39,20 +50,16 @@ public class AdminCandidateController {
         return "admin/candidates/form";
     }
 
+    // UPDATE: Accept MultipartFile image
     @PostMapping("/create")
     public String create(@ModelAttribute Candidate candidate,
                          @RequestParam String studentId,
                          @RequestParam Long positionId,
                          @RequestParam(required = false) Long facultyId,
+                         @RequestParam(required = false) MultipartFile image, // Image parameter
                          RedirectAttributes redirectAttributes) {
         try {
-            studentRepository.findById(studentId).ifPresent(candidate::setStudent);
-            positionRepository.findById(positionId).ifPresent(candidate::setPosition);
-            if (facultyId != null) {
-                facultyRepository.findById(facultyId).ifPresent(candidate::setFaculty);
-            }
-
-            candidateRepository.save(candidate);
+            candidateService.createCandidate(candidate, studentId, positionId, facultyId, image);
             redirectAttributes.addFlashAttribute("successMessage", "Candidate created successfully!");
             return "redirect:/admin/candidates";
         } catch (Exception e) {
@@ -63,7 +70,7 @@ public class AdminCandidateController {
 
     @GetMapping("/edit/{id}")
     public String editForm(@PathVariable Long id, Model model, RedirectAttributes redirectAttributes) {
-        return candidateRepository.findById(id)
+        return candidateService.getCandidateById(id)
                 .map(candidate -> {
                     model.addAttribute("candidate", candidate);
                     model.addAttribute("students", studentRepository.findAll());
@@ -79,22 +86,17 @@ public class AdminCandidateController {
                 });
     }
 
+    // UPDATE: Accept MultipartFile image
     @PostMapping("/edit/{id}")
     public String update(@PathVariable Long id,
                          @ModelAttribute Candidate candidate,
                          @RequestParam String studentId,
                          @RequestParam Long positionId,
                          @RequestParam(required = false) Long facultyId,
+                         @RequestParam(required = false) MultipartFile image, // Image parameter
                          RedirectAttributes redirectAttributes) {
         try {
-            candidate.setId(id);
-            studentRepository.findById(studentId).ifPresent(candidate::setStudent);
-            positionRepository.findById(positionId).ifPresent(candidate::setPosition);
-            if (facultyId != null) {
-                facultyRepository.findById(facultyId).ifPresent(candidate::setFaculty);
-            }
-
-            candidateRepository.save(candidate);
+            candidateService.updateCandidate(id, candidate, studentId, positionId, facultyId, image);
             redirectAttributes.addFlashAttribute("successMessage", "Candidate updated successfully!");
             return "redirect:/admin/candidates";
         } catch (Exception e) {
@@ -106,7 +108,7 @@ public class AdminCandidateController {
     @PostMapping("/delete/{id}")
     public String delete(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         try {
-            candidateRepository.deleteById(id);
+            candidateService.deleteCandidate(id);
             redirectAttributes.addFlashAttribute("successMessage", "Candidate deleted successfully!");
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage", "Error deleting candidate: " + e.getMessage());

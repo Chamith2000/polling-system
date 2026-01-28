@@ -65,6 +65,7 @@ public class WebSecurityConfig {
                         .requestMatchers("/ws-voting/**").permitAll() // Allow WebSocket connections
                         .requestMatchers("/dashboard/voting").authenticated() // Voting dashboard needs login
                         .requestMatchers("/admin/**").hasAnyRole("ADMIN", "MANAGER") // Admin pages require ADMIN or MANAGER role
+                        .requestMatchers("/public/results/**").permitAll() // Inside filterChain method, add this to authorizeHttpRequests:
                         .anyRequest().authenticated() // Protect all other URLs
                 )
 

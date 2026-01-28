@@ -1,7 +1,7 @@
 package com.oexil.univote.dto;
 
-import lombok.Data;
 import jakarta.validation.constraints.NotBlank;
+import lombok.Data;
 
 @Data
 public class VotingActivationRequest {

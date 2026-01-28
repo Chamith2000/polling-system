@@ -2,6 +2,7 @@ package com.oexil.univote.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
+
 import java.time.LocalDateTime;
 
 @Entity
@@ -18,7 +19,7 @@ public class Faculty {
     @Column(nullable = false, unique = true, length = 20)
     private String code;
 
-    @Column(name = "color_code", nullable = false, length = 7)
+    @Column(name = "color_code", nullable = false, length = 10)
     private String colorCode;
 
     @Column(name = "created_at")

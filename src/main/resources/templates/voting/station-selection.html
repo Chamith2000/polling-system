@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Select Voting Station</title>
+    <link rel="stylesheet" th:href="@{/css/voting/station-selection.css}">
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>🗳️ Select Your Voting Station</h1>
+        <p>Click on your faculty to open the operator station</p>
+    </div>
+
+    <div th:if="${faculties.empty}" class="no-faculties">
+        <i>🏫</i>
+        <h3>No Faculties Available</h3>
+        <p>Please add faculties in the admin panel before setting up voting stations.</p>
+        <a href="/dashboard/voting" class="btn-admin">
+            ← Back to Dashboard
+        </a>
+    </div>
+
+    <div th:unless="${faculties.empty}">
+        <div class="stations-grid">
+            <div th:each="faculty : ${faculties}"
+                 class="station-card"
+                 th:style="'border-color: ' + ${faculty.colorCode}"
+                 th:data-station-code="${faculty.code}"
+                 onclick="openStationFromData(this)">
+
+                <div class="station-icon"
+                     th:style="'background: linear-gradient(135deg, ' + ${faculty.colorCode} + ' 0%, ' + ${faculty.colorCode} + '99 100%)'">
+                    <span th:switch="${faculty.code}">
+                            <span th:case="'ENG'">🔧</span>
+                            <span th:case="'IT'">💻</span>
+                            <span th:case="'BM'">💼</span>
+                            <span th:case="'AS'">🔬</span>
+                            <span th:case="'MED'">⚕️</span>
+                            <span th:case="'LAW'">⚖️</span>
+                            <span th:case="'ART'">🎨</span>
+                            <span th:case="*">🎓</span>
+                        </span>
+                </div>
+
+                <div class="station-name" th:text="${faculty.name}">Faculty Name</div>
+                <div class="station-code">
+                    <span th:text="'Station Code: ' + ${faculty.code}">Station Code: XXX</span>
+                </div>
+                <div class="station-description">
+                    <span th:text="${faculty.name + ' Faculty Voting Station'}">Description</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="info-box">
+            <h3>📋 Setup Instructions</h3>
+            <ol>
+                <li><strong>Select Your Faculty:</strong> Click on your faculty card above to open operator station</li>
+                <li><strong>Operator Device:</strong> This device will be used for student validation</li>
+                <li><strong>Student Tablet:</strong> Open a separate device and navigate to the tablet view</li>
+                <li><strong>Tablet URL Format:</strong>
+                    <code th:each="faculty, iterStat : ${faculties}">
+                        <span th:text="${iterStat.index > 0 ? ', ' : ''}"></span>
+                        <span th:text="'http://localhost:8000/voting/tablet/' + ${faculty.code}"></span>
+                    </code>
+                </li>
+                <li><strong>Faculty Colors:</strong> Each faculty has its own color for easy identification</li>
+            </ol>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openStation(stationCode) {
+        window.location.href = '/voting/operator/' + stationCode;
+    }
+
+    function openStationFromData(element) {
+        const stationCode = element.getAttribute('data-station-code');
+        openStation(stationCode);
+    }
+</script>
+</body>
+</html>

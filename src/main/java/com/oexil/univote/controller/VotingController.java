@@ -3,15 +3,21 @@ package com.oexil.univote.controller;
 import com.oexil.univote.dto.ValidationResponse;
 import com.oexil.univote.dto.VoteSubmissionDTO;
 import com.oexil.univote.dto.VotingSessionDTO;
+import com.oexil.univote.service.FacultyLookupService;
 import com.oexil.univote.service.VotingService;
 import com.oexil.univote.service.VotingStationService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+import java.util.Map;
+
+@Slf4j
 @Controller
 @RequiredArgsConstructor
 @RequestMapping("/voting")
@@ -19,6 +25,7 @@ public class VotingController {
 
     private final VotingService votingService;
     private final VotingStationService stationService;
+    private final FacultyLookupService facultyLookupService;
 
     // ==================== OPERATOR INTERFACE ====================
 
@@ -27,44 +34,51 @@ public class VotingController {
         return "voting/pin-entry";
     }
 
-    /**
-     * SECURE PIN VALIDATION
-     * This checks the PIN on the server side and sets a session attribute.
-     */
     @PostMapping("/validate-pin")
     @ResponseBody
     public ValidationResponse validatePin(@RequestParam String pin, HttpSession session) {
-        // Assume votingService.validatePin(pin) returns true if PIN is correct
         boolean isValid = votingService.validatePin(pin);
 
         if (isValid) {
-            // Mark this session as authorized
-            session.setAttribute("isOperatorAuthorized", true);
+            session.setAttribute("pinValidated", true);
+            log.info("PIN validated successfully");
             return new ValidationResponse(true, "PIN validated successfully", null);
         } else {
+            log.warn("Invalid PIN attempt: {}", pin);
             return new ValidationResponse(false, "Invalid or expired PIN", null);
         }
     }
 
-    /**
-     * OPERATOR STATION PAGE
-     * Protected: Checks session before showing the page.
-     */
+    @GetMapping("/station-selection")
+    public String stationSelection(HttpSession session, Model model) {
+        Boolean pinValidated = (Boolean) session.getAttribute("pinValidated");
+
+        if (pinValidated == null || !pinValidated) {
+            return "redirect:/voting/";
+        }
+
+        model.addAttribute("faculties", facultyLookupService.getAllFaculties());
+        return "voting/station-selection";
+    }
+
     @GetMapping("/operator/{stationId}")
     public String operatorStation(@PathVariable String stationId,
                                   HttpSession session,
                                   Model model) {
+        Boolean pinValidated = (Boolean) session.getAttribute("pinValidated");
 
-        // Security Check: Has the user entered the PIN securely?
-        Boolean isAuthorized = (Boolean) session.getAttribute("isOperatorAuthorized");
-
-        if (isAuthorized == null || !isAuthorized) {
-            // If not authorized, redirect them back or show error
+        if (pinValidated == null || !pinValidated) {
             return "redirect:/voting/";
         }
 
         model.addAttribute("stationId", stationId);
-        model.addAttribute("stationName", getStationName(stationId));
+        model.addAttribute("stationName", facultyLookupService.getStationName(stationId));
+
+        model.addAttribute("facultyColor", facultyLookupService.getStationColor(stationId));
+
+        log.info("Opening operator station: {} - {}", stationId,
+                facultyLookupService.getStationName(stationId));
+
         return "voting/operator-station";
     }
 
@@ -73,34 +87,66 @@ public class VotingController {
     public ValidationResponse validateStudent(@RequestParam String studentId,
                                               @RequestParam String stationId,
                                               HttpSession session) {
+        Boolean pinValidated = (Boolean) session.getAttribute("pinValidated");
 
-        // Security Check for API actions too
-        Boolean isAuthorized = (Boolean) session.getAttribute("isOperatorAuthorized");
-        if (isAuthorized == null || !isAuthorized) {
-            return new ValidationResponse(false, "Unauthorized: Please log in again", null);
+        if (pinValidated == null || !pinValidated) {
+            return new ValidationResponse(false, "PIN not validated", null);
         }
 
         ValidationResponse response = votingService.validateStudent(studentId);
 
         if (response.isSuccess()) {
-            VotingSessionDTO session1 = response.getVotingSession();
+            VotingSessionDTO votingSession = response.getVotingSession();
 
             // Verify student belongs to this station's faculty
-            String facultyCode = getFacultyCode(session1.getFacultyId());
+            String facultyCode = facultyLookupService.getFacultyCode(votingSession.getFacultyId());
             if (!facultyCode.equals(stationId)) {
+                log.warn("Student {} does not belong to station {}", studentId, stationId);
                 return new ValidationResponse(false,
                         "Student does not belong to this faculty station", null);
             }
 
             // Activate ballot on the tablet for this station
-            stationService.activateBallot(stationId, session1);
+            stationService.activateBallot(stationId, votingSession);
+
+            log.info("Ballot activated for student {} at station {}", studentId, stationId);
 
             return new ValidationResponse(true,
-                    "Ballot activated on tablet for " + session1.getStudentName(),
-                    session1);
+                    "Ballot activated on tablet for " + votingSession.getStudentName(),
+                    votingSession);
         }
 
         return response;
+    }
+
+    @GetMapping("/operator/search")
+    @ResponseBody
+    public List<Map<String, Object>> searchStudents(@RequestParam String stationId, @RequestParam String query, HttpSession session) {
+        Boolean pinValidated = (Boolean) session.getAttribute("pinValidated");
+        if (pinValidated == null || !pinValidated) return List.of();
+
+        return votingService.searchStudentsForOperator(stationId, query);
+    }
+
+    @GetMapping("/operator/recent")
+    @ResponseBody
+    public List<Map<String, Object>> getRecentVotes(@RequestParam String stationId, HttpSession session) {
+        Boolean pinValidated = (Boolean) session.getAttribute("pinValidated");
+        if (pinValidated == null || !pinValidated) return List.of();
+
+        return votingService.getRecentVoters(stationId);
+    }
+
+    @GetMapping("/operator/vote-count")
+    @ResponseBody
+    public Map<String, Object> getVoteCount(@RequestParam String stationId, HttpSession session) {
+        Boolean pinValidated = (Boolean) session.getAttribute("pinValidated");
+        if (pinValidated == null || !pinValidated) {
+            return Map.of("count", 0, "error", "Not authenticated");
+        }
+
+        long count = votingService.getVoteCountByStation(stationId);
+        return Map.of("count", count);
     }
 
     // ==================== STUDENT TABLET INTERFACE ====================
@@ -108,7 +154,10 @@ public class VotingController {
     @GetMapping("/tablet/{stationId}")
     public String studentTablet(@PathVariable String stationId, Model model) {
         model.addAttribute("stationId", stationId);
-        model.addAttribute("stationName", getStationName(stationId));
+        model.addAttribute("stationName", facultyLookupService.getStationName(stationId));
+
+        log.info("Student tablet opened for station: {}", stationId);
+
         return "voting/student-tablet";
     }
 
@@ -131,11 +180,15 @@ public class VotingController {
                                           HttpServletRequest request) {
         String ipAddress = request.getRemoteAddr();
 
+        log.info("Submitting votes for student {} at station {}",
+                submission.getStudentId(), stationId);
+
         ValidationResponse response = votingService.submitVotes(submission, ipAddress);
 
         if (response.isSuccess()) {
             // Reset the ballot on this station's tablet
             stationService.resetBallot(stationId);
+            log.info("Vote submitted successfully and ballot reset for station {}", stationId);
         }
 
         return response;
@@ -145,28 +198,7 @@ public class VotingController {
     @ResponseBody
     public ValidationResponse resetBallot(@PathVariable String stationId) {
         stationService.resetBallot(stationId);
+        log.info("Ballot manually reset for station {}", stationId);
         return new ValidationResponse(true, "Ballot reset successfully", null);
-    }
-
-    // ==================== HELPER METHODS ====================
-
-    private String getStationName(String stationId) {
-        return switch (stationId.toUpperCase()) {
-            case "ENG" -> "Engineering Faculty";
-            case "IT" -> "Information Technology Faculty";
-            case "BM" -> "Business Management Faculty";
-            case "AS" -> "Applied Sciences Faculty";
-            default -> "Unknown Faculty";
-        };
-    }
-
-    private String getFacultyCode(Long facultyId) {
-        return switch (facultyId.intValue()) {
-            case 1 -> "ENG";
-            case 2 -> "IT";
-            case 3 -> "BM";
-            case 4 -> "AS";
-            default -> "UNKNOWN";
-        };
     }
 }

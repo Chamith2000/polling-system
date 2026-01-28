@@ -1,203 +1,236 @@
-<!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Select Voting Station</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+<!--<!DOCTYPE html>-->
+<!--<html xmlns:th="http://www.thymeleaf.org">-->
+<!--<head>-->
+<!--    <meta charset="UTF-8">-->
+<!--    <meta name="viewport" content="width=device-width, initial-scale=1.0">-->
+<!--    <title>Select Voting Station</title>-->
+<!--    <style>-->
+<!--        * {-->
+<!--            margin: 0;-->
+<!--            padding: 0;-->
+<!--            box-sizing: border-box;-->
+<!--        }-->
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-            min-height: 100vh;
-            padding: 40px 20px;
-        }
+<!--        body {-->
+<!--            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;-->
+<!--            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);-->
+<!--            min-height: 100vh;-->
+<!--            padding: 40px 20px;-->
+<!--        }-->
 
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
+<!--        .container {-->
+<!--            max-width: 1200px;-->
+<!--            margin: 0 auto;-->
+<!--        }-->
 
-        .header {
-            text-align: center;
-            color: white;
-            margin-bottom: 60px;
-        }
+<!--        .header {-->
+<!--            text-align: center;-->
+<!--            color: white;-->
+<!--            margin-bottom: 60px;-->
+<!--        }-->
 
-        .header h1 {
-            font-size: 3em;
-            margin-bottom: 10px;
-        }
+<!--        .header h1 {-->
+<!--            font-size: 3em;-->
+<!--            margin-bottom: 10px;-->
+<!--        }-->
 
-        .header p {
-            font-size: 1.3em;
-            opacity: 0.9;
-        }
+<!--        .header p {-->
+<!--            font-size: 1.3em;-->
+<!--            opacity: 0.9;-->
+<!--        }-->
 
-        .stations-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 30px;
-            margin-bottom: 40px;
-        }
+<!--        .stations-grid {-->
+<!--            display: grid;-->
+<!--            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));-->
+<!--            gap: 30px;-->
+<!--            margin-bottom: 40px;-->
+<!--        }-->
 
-        .station-card {
-            background: white;
-            border-radius: 20px;
-            padding: 40px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-        }
+<!--        .station-card {-->
+<!--            background: white;-->
+<!--            border-radius: 20px;-->
+<!--            padding: 40px;-->
+<!--            text-align: center;-->
+<!--            cursor: pointer;-->
+<!--            transition: all 0.3s;-->
+<!--            box-shadow: 0 10px 30px rgba(0,0,0,0.2);-->
+<!--            border: 3px solid transparent;-->
+<!--        }-->
 
-        .station-card:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
-        }
+<!--        .station-card:hover {-->
+<!--            transform: translateY(-10px);-->
+<!--            box-shadow: 0 20px 40px rgba(0,0,0,0.3);-->
+<!--        }-->
 
-        .station-icon {
-            width: 100px;
-            height: 100px;
-            margin: 0 auto 20px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 3em;
-            color: white;
-        }
+<!--        .station-icon {-->
+<!--            width: 100px;-->
+<!--            height: 100px;-->
+<!--            margin: 0 auto 20px;-->
+<!--            border-radius: 50%;-->
+<!--            display: flex;-->
+<!--            align-items: center;-->
+<!--            justify-content: center;-->
+<!--            font-size: 3em;-->
+<!--            color: white;-->
+<!--        }-->
 
-        .station-card.eng .station-icon {
-            background: linear-gradient(135deg, #1E40AF 0%, #3B82F6 100%);
-        }
+<!--        .station-name {-->
+<!--            font-size: 1.8em;-->
+<!--            color: #333;-->
+<!--            margin-bottom: 10px;-->
+<!--            font-weight: 600;-->
+<!--        }-->
 
-        .station-card.it .station-icon {
-            background: linear-gradient(135deg, #059669 0%, #10B981 100%);
-        }
+<!--        .station-code {-->
+<!--            color: #999;-->
+<!--            font-size: 1.1em;-->
+<!--            margin-bottom: 20px;-->
+<!--        }-->
 
-        .station-card.bm .station-icon {
-            background: linear-gradient(135deg, #DC2626 0%, #EF4444 100%);
-        }
+<!--        .station-description {-->
+<!--            color: #666;-->
+<!--            line-height: 1.6;-->
+<!--        }-->
 
-        .station-card.as .station-icon {
-            background: linear-gradient(135deg, #7C3AED 0%, #A78BFA 100%);
-        }
+<!--        .info-box {-->
+<!--            background: white;-->
+<!--            border-radius: 15px;-->
+<!--            padding: 30px;-->
+<!--            max-width: 800px;-->
+<!--            margin: 0 auto;-->
+<!--        }-->
 
-        .station-name {
-            font-size: 1.8em;
-            color: #333;
-            margin-bottom: 10px;
-            font-weight: 600;
-        }
+<!--        .info-box h3 {-->
+<!--            color: #333;-->
+<!--            margin-bottom: 20px;-->
+<!--            font-size: 1.5em;-->
+<!--            text-align: center;-->
+<!--        }-->
 
-        .station-code {
-            color: #999;
-            font-size: 1.1em;
-            margin-bottom: 20px;
-        }
+<!--        .info-box ol {-->
+<!--            color: #666;-->
+<!--            line-height: 2;-->
+<!--            padding-left: 25px;-->
+<!--        }-->
 
-        .station-description {
-            color: #666;
-            line-height: 1.6;
-        }
+<!--        .info-box li {-->
+<!--            margin-bottom: 10px;-->
+<!--        }-->
 
-        .info-box {
-            background: white;
-            border-radius: 15px;
-            padding: 30px;
-            max-width: 800px;
-            margin: 0 auto;
-        }
+<!--        .no-faculties {-->
+<!--            background: white;-->
+<!--            border-radius: 20px;-->
+<!--            padding: 60px 40px;-->
+<!--            text-align: center;-->
+<!--            color: #666;-->
+<!--        }-->
 
-        .info-box h3 {
-            color: #333;
-            margin-bottom: 20px;
-            font-size: 1.5em;
-            text-align: center;
-        }
+<!--        .no-faculties i {-->
+<!--            font-size: 5em;-->
+<!--            color: #ccc;-->
+<!--            margin-bottom: 20px;-->
+<!--        }-->
 
-        .info-box ol {
-            color: #666;
-            line-height: 2;
-            padding-left: 25px;
-        }
+<!--        .no-faculties h3 {-->
+<!--            color: #333;-->
+<!--            margin-bottom: 15px;-->
+<!--            font-size: 2em;-->
+<!--        }-->
 
-        .info-box li {
-            margin-bottom: 10px;
-        }
-    </style>
-</head>
-<body>
-<div class="container">
-    <div class="header">
-        <h1>🗳️ Select Your Voting Station</h1>
-        <p>Click on your faculty to open the operator station</p>
-    </div>
+<!--        .no-faculties p {-->
+<!--            font-size: 1.1em;-->
+<!--            margin-bottom: 30px;-->
+<!--        }-->
 
-    <div class="stations-grid">
-        <div class="station-card eng" onclick="openStation('ENG')">
-            <div class="station-icon">🔧</div>
-            <div class="station-name">Engineering</div>
-            <div class="station-code">ENG</div>
-            <div class="station-description">
-                Faculty of Engineering<br>
-                Station 1
-            </div>
-        </div>
+<!--        .btn-admin {-->
+<!--            display: inline-block;-->
+<!--            padding: 15px 30px;-->
+<!--            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);-->
+<!--            color: white;-->
+<!--            text-decoration: none;-->
+<!--            border-radius: 10px;-->
+<!--            font-weight: 600;-->
+<!--            transition: all 0.3s;-->
+<!--        }-->
 
-        <div class="station-card it" onclick="openStation('IT')">
-            <div class="station-icon">💻</div>
-            <div class="station-name">Information Technology</div>
-            <div class="station-code">IT</div>
-            <div class="station-description">
-                Faculty of IT<br>
-                Station 2
-            </div>
-        </div>
+<!--        .btn-admin:hover {-->
+<!--            transform: translateY(-2px);-->
+<!--            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);-->
+<!--        }-->
+<!--    </style>-->
+<!--</head>-->
+<!--<body>-->
+<!--<div class="container">-->
+<!--    <div class="header">-->
+<!--        <h1>🗳️ Select Your Voting Station</h1>-->
+<!--        <p>Click on your faculty to open the operator station</p>-->
+<!--    </div>-->
 
-        <div class="station-card bm" onclick="openStation('BM')">
-            <div class="station-icon">💼</div>
-            <div class="station-name">Business Management</div>
-            <div class="station-code">BM</div>
-            <div class="station-description">
-                Faculty of Business<br>
-                Station 3
-            </div>
-        </div>
+<!--    &lt;!&ndash; No Faculties Message &ndash;&gt;-->
+<!--    <div th:if="${faculties.empty}" class="no-faculties">-->
+<!--        <i>🏫</i>-->
+<!--        <h3>No Faculties Available</h3>-->
+<!--        <p>Please add faculties in the admin panel before setting up voting stations.</p>-->
+<!--        <a href="/dashboard/voting" class="btn-admin">-->
+<!--            ← Back to Dashboard-->
+<!--        </a>-->
+<!--    </div>-->
 
-        <div class="station-card as" onclick="openStation('AS')">
-            <div class="station-icon">🔬</div>
-            <div class="station-name">Applied Sciences</div>
-            <div class="station-code">AS</div>
-            <div class="station-description">
-                Faculty of Sciences<br>
-                Station 4
-            </div>
-        </div>
-    </div>
+<!--    &lt;!&ndash; Dynamic Faculty Stations Grid &ndash;&gt;-->
+<!--    <div th:unless="${faculties.empty}">-->
+<!--        <div class="stations-grid">-->
+<!--            <div th:each="faculty : ${faculties}"-->
+<!--                 class="station-card"-->
+<!--                 th:style="'border-color: ' + ${faculty.colorCode}"-->
+<!--                 th:onclick="'openStation(\'' + ${faculty.code} + '\')'">-->
 
-    <div class="info-box">
-        <h3>📋 Setup Instructions</h3>
-        <ol>
-            <li><strong>Select Your Faculty:</strong> Click on your faculty card above</li>
-            <li><strong>Operator Device:</strong> This will open the operator station interface</li>
-            <li><strong>Student Tablet:</strong> On a separate device, open the tablet view</li>
-            <li><strong>Tablet URL:</strong> http://localhost:8080/voting/tablet/[FACULTY_CODE]</li>
-            <li><strong>Example:</strong> Engineering tablet → http://localhost:8080/voting/tablet/ENG</li>
-        </ol>
-    </div>
-</div>
+<!--                <div class="station-icon"-->
+<!--                     th:style="'background: linear-gradient(135deg, ' + ${faculty.colorCode} + ' 0%, ' + ${faculty.colorCode} + '99 100%)'">-->
+<!--                    &lt;!&ndash; Dynamic Icon based on faculty code &ndash;&gt;-->
+<!--                    <span th:switch="${faculty.code}">-->
+<!--                            <span th:case="'ENG'">🔧</span>-->
+<!--                            <span th:case="'IT'">💻</span>-->
+<!--                            <span th:case="'BM'">💼</span>-->
+<!--                            <span th:case="'AS'">🔬</span>-->
+<!--                            <span th:case="'MED'">⚕️</span>-->
+<!--                            <span th:case="'LAW'">⚖️</span>-->
+<!--                            <span th:case="'ART'">🎨</span>-->
+<!--                            <span th:case="*">🎓</span>-->
+<!--                        </span>-->
+<!--                </div>-->
 
-<script>
-    function openStation(stationId) {
-        window.location.href = '/voting/operator/' + stationId;
-    }
-</script>
-</body>
-</html>
+<!--                <div class="station-name" th:text="${faculty.name}">Faculty Name</div>-->
+<!--                <div class="station-code">-->
+<!--                    <span th:text="'Station Code: ' + ${faculty.code}">Station Code: XXX</span>-->
+<!--                </div>-->
+<!--                <div class="station-description">-->
+<!--                    <span th:text="${faculty.name + ' Faculty Voting Station'}">Description</span>-->
+<!--                </div>-->
+<!--            </div>-->
+<!--        </div>-->
+
+<!--        <div class="info-box">-->
+<!--            <h3>📋 Setup Instructions</h3>-->
+<!--            <ol>-->
+<!--                <li><strong>Select Your Faculty:</strong> Click on your faculty card above to open operator station</li>-->
+<!--                <li><strong>Operator Device:</strong> This device will be used for student validation</li>-->
+<!--                <li><strong>Student Tablet:</strong> Open a separate device and navigate to the tablet view</li>-->
+<!--                <li><strong>Tablet URL Format:</strong>-->
+<!--                    <code th:each="faculty, iterStat : ${faculties}">-->
+<!--                        <span th:text="${iterStat.index > 0 ? ', ' : ''}"></span>-->
+<!--                        <span th:text="'http://localhost:8000/voting/tablet/' + ${faculty.code}"></span>-->
+<!--                    </code>-->
+<!--                </li>-->
+<!--                <li><strong>Faculty Colors:</strong> Each faculty has its own color for easy identification</li>-->
+<!--            </ol>-->
+<!--        </div>-->
+<!--    </div>-->
+<!--</div>-->
+
+<!--<script>-->
+<!--    function openStation(stationCode) {-->
+<!--        window.location.href = '/voting/operator/' + stationCode;-->
+<!--    }-->
+<!--</script>-->
+<!--</body>-->
+<!--</html>-->

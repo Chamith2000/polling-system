@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html layout:decorate="~{layout}"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:th="http://www.w3.org/1999/xhtml">
+<head>
+    <title>Voting Management Dashboard</title>
+</head>
+<body>
+<section layout:fragment="content">
+    <link rel="stylesheet" th:href="@{/css/admin/dashboard.css}">
+
+    <div th:if="${success}" class="alert alert-success">
+        <p th:text="${success}"></p>
+    </div>
+
+    <div th:if="${error}" class="alert alert-danger">
+        <p th:text="${error}"></p>
+    </div>
+
+    <div class="voting-card">
+        <div class="voting-header">
+            <div class="voting-icon">🗳️</div>
+            <div class="voting-title">
+                <h2>University Voting System</h2>
+                <p>Manage voting stations for student elections</p>
+            </div>
+        </div>
+
+        <div th:if="${faculties == null || faculties.empty}" class="no-faculties">
+            <i class="mdi mdi-school-outline"></i>
+            <h4>No Faculties Found</h4>
+            <p>Please add faculties first before setting up voting stations.</p>
+            <a th:href="@{/admin/faculties/create}" class="btn btn-primary">
+                <i class="mdi mdi-plus"></i> Add Faculty
+            </a>
+        </div>
+
+        <div th:if="${faculties != null && !faculties.empty}" class="stations-grid">
+            <div th:each="faculty : ${faculties}"
+                 class="station-card"
+                 th:style="'border-color: ' + ${faculty.colorCode}">
+
+                <div class="station-icon"
+                     th:style="'background: linear-gradient(135deg, ' + ${faculty.colorCode} + ' 0%, ' + ${faculty.colorCode} + '99 100%)'">
+                    <span th:switch="${faculty.code}">
+                        <span th:case="'ENG'">🔧</span>
+                        <span th:case="'IT'">💻</span>
+                        <span th:case="'BM'">💼</span>
+                        <span th:case="'AS'">🔬</span>
+                        <span th:case="'SC'">🧪</span>
+                        <span th:case="'MG'">📊</span>
+                        <span th:case="'AR'">🎨</span>
+                        <span th:case="'EN'">⚙️</span>
+                        <span th:case="'MED'">⚕️</span>
+                        <span th:case="'LAW'">⚖️</span>
+                        <span th:case="*">🎓</span>
+                    </span>
+                </div>
+
+                <div class="station-name" th:text="${faculty.name}">Faculty Name</div>
+                <div class="station-code">
+                    Station Code:
+                    <span class="badge badge-secondary" th:text="${faculty.code}">CODE</span>
+                </div>
+
+                <div class="station-actions">
+                    <button class="btn-operator"
+                            th:data-station-code="${faculty.code}"
+                            onclick="openOperatorWithPin(this)">
+                        👤 Operator
+                    </button>
+                    <button class="btn-tablet"
+                            th:data-station-code="${faculty.code}"
+                            onclick="openTabletFromButton(this)">
+                        📱 Tablet
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div th:if="${faculties != null && !faculties.empty}" class="info-section">
+            <h4>📋 Setup Instructions:</h4>
+            <ul>
+                <li><strong>Operator Device:</strong> Click "👤 Operator" button for each faculty to open operator interface</li>
+                <li><strong>Student Tablet:</strong> Click "📱 Tablet" button to open student voting interface on tablet</li>
+                <li><strong>Two-Device Setup:</strong> Each station needs 2 devices (1 operator laptop + 1 student tablet)</li>
+                <li><strong>WebSocket Connection:</strong> Tablets connect automatically via WebSocket</li>
+                <li><strong>Real-time Sync:</strong> When operator activates ballot, tablet opens automatically</li>
+                <li><strong>Faculty Colors:</strong> Each faculty has its own color theme for easy identification</li>
+                <li><strong>Add More Faculties:</strong> Manage faculties via
+                    <a th:href="@{/admin/faculties}">Faculties Management</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        function openOperatorWithPin(button) {
+            const stationCode = button.getAttribute('data-station-code');
+
+            // Prompt for PIN
+            const pin = prompt('Enter voting PIN to access operator station:');
+
+            if (pin === null) {
+                return; // User cancelled
+            }
+
+            if (pin.trim() === '') {
+                alert('❌ Please enter a PIN');
+                return;
+            }
+
+            // Validate PIN via API
+            validatePinAndOpenOperator(pin, stationCode);
+        }
+
+        async function validatePinAndOpenOperator(pin, stationCode) {
+            try {
+                const formData = new URLSearchParams();
+                formData.append('pin', pin);
+
+                const response = await fetch('/voting/validate-pin', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // PIN is valid, open operator station in new window
+                    window.open('/voting/operator/' + stationCode, '_blank');
+                } else {
+                    alert('❌ ' + (data.message || 'Invalid PIN! Please try again.'));
+                }
+            } catch (error) {
+                console.error('Error validating PIN:', error);
+                alert('❌ Error validating PIN. Please try again.');
+            }
+        }
+
+        function openTabletFromButton(button) {
+            const stationCode = button.getAttribute('data-station-code');
+            window.open('/voting/tablet/' + stationCode, '_blank');
+        }
+    </script>
+</section>
+</body>
+</html>

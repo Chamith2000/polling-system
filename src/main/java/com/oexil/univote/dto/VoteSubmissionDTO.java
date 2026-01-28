@@ -1,6 +1,7 @@
 package com.oexil.univote.dto;
 
 import lombok.Data;
+
 import java.util.Map;
 
 @Data

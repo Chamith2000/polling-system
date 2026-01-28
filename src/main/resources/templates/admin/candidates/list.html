@@ -8,8 +8,30 @@
             <h4 class="card-title mb-0"><i class="mdi mdi-account-star"></i> Manage Candidates</h4>
             <a th:href="@{/admin/candidates/create}" class="btn btn-primary"><i class="mdi mdi-plus"></i> Add Candidate</a>
         </div>
+
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <form th:action="@{/admin/candidates}" method="get" class="form-inline">
+                    <div class="input-group" style="width: 100%;">
+                        <input type="text" name="keyword" class="form-control"
+                               placeholder="Search by student name or ID..."
+                               th:value="${keyword}">
+                        <div class="input-group-append">
+                            <button type="submit" class="btn btn-secondary" title="Search">
+                                <i class="mdi mdi-magnify"></i>
+                            </button>
+                            <a th:href="@{/admin/candidates}" class="btn btn-light" title="Clear Search">
+                                <i class="mdi mdi-refresh"></i>
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
         <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show"><strong>Success!</strong> <span th:text="${successMessage}"></span><button type="button" class="close" data-dismiss="alert">&times;</button></div>
         <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show"><strong>Error!</strong> <span th:text="${errorMessage}"></span><button type="button" class="close" data-dismiss="alert">&times;</button></div>
+
         <div class="table-responsive">
             <table class="table table-hover">
                 <thead><tr><th>ID</th><th>Student</th><th>Position</th><th>Faculty</th><th>Description</th><th>Actions</th></tr></thead>
@@ -29,6 +51,22 @@
                 </tbody>
             </table>
         </div>
+
+        <nav aria-label="Page navigation" class="mt-4" th:if="${totalPages > 1}">
+            <ul class="pagination justify-content-center">
+                <li class="page-item" th:classappend="${currentPage == 1} ? 'disabled'">
+                    <a class="page-link" th:href="@{/admin/candidates(page=${currentPage - 1}, keyword=${keyword})}">Previous</a>
+                </li>
+                <li class="page-item" th:each="i : ${#numbers.sequence(1, totalPages)}"
+                    th:classappend="${currentPage == i} ? 'active'">
+                    <a class="page-link" th:href="@{/admin/candidates(page=${i}, keyword=${keyword})}" th:text="${i}">1</a>
+                </li>
+                <li class="page-item" th:classappend="${currentPage == totalPages} ? 'disabled'">
+                    <a class="page-link" th:href="@{/admin/candidates(page=${currentPage + 1}, keyword=${keyword})}">Next</a>
+                </li>
+            </ul>
+        </nav>
+
     </div></div></div></div>
 </div>
 </body>

@@ -13,16 +13,16 @@ public class ImageUploadService {
     @Value("${archive.path}")
     private String archivePath;
 
-    @Value("${server.file.prefix}")
-    private String filePrefix;
+    private final String urlPrefix = "/files/";
 
     public String[] getResultsOfFileWrite(MultipartFile imageFile) {
-        String urlPrefix = filePrefix + "/";
         String fileName = new FileUtilizer().generateFileName(imageFile.getOriginalFilename());
 
         if (!new FileUtilizer().writeToDisk(imageFile, Paths.get(archivePath), fileName)) {
             return null;
         } else {
+            // [Physical Path, URL Path, File Name]
+            // Example URL: /files/12345.jpg
             return new String[]{(archivePath + "/" + fileName), (urlPrefix + fileName), (fileName)};
         }
     }

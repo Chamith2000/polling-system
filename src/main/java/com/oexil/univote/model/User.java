@@ -3,13 +3,14 @@ package com.oexil.univote.model;
 import com.oexil.univote.enums.AuthProvider;
 import com.oexil.univote.enums.UserType;
 import com.oexil.univote.model.masters.Role;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
-import jakarta.persistence.*;
-
 import java.io.Serializable;
-import java.util.*;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
 
 @Getter
 @Setter

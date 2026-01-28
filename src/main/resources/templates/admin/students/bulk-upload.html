@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:th="http://www.w3.org/1999/xhtml"
+      layout:decorate="~{layout}">
+<head><title>Bulk Upload Students</title></head>
+<body>
+<div layout:fragment="content">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="card-title">
+                        <i class="mdi mdi-upload"></i> Bulk Upload Students
+                    </h4>
+
+                    <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show">
+                        <strong>Error!</strong> <span th:text="${errorMessage}"></span>
+                        <button type="button" class="close" data-dismiss="alert">&times;</button>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <h5><i class="mdi mdi-information"></i> Instructions:</h5>
+                        <ol>
+                            <li>Download the template file (CSV or Excel)</li>
+                            <li>Fill in student details following the format</li>
+                            <li>Upload the completed file</li>
+                            <li>Review the upload results</li>
+                        </ol>
+                    </div>
+
+                    <div class="card mb-4" style="background: #f8f9fa;">
+                        <div class="card-body">
+                            <h5 class="card-title"><i class="mdi mdi-download"></i> Step 1: Download Template</h5>
+                            <p class="text-muted">Download a sample template with the correct format:</p>
+                            <div class="btn-group" role="group">
+                                <a href="/admin/students/download-template" download="students_template.csv" class="btn btn-outline-primary">
+                                    <i class="mdi mdi-file-delimited"></i> Download CSV Template
+                                </a>
+
+                                <a th:href="@{/admin/students/download-template-excel}" class="btn btn-outline-success">
+                                    <i class="mdi mdi-file-excel"></i> Download Excel Template
+                                </a>
+                            </div>
+
+                            <div class="mt-3">
+                                <strong>Template Format:</strong>
+                                <table class="table table-sm table-bordered mt-2">
+                                    <thead class="thead-light">
+                                    <tr>
+                                        <th>studentId</th>
+                                        <th>fullName</th>
+                                        <th>facultyCode</th>
+                                        <th>email</th>
+                                        <th>year</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    <tr>
+                                        <td>ENG001</td>
+                                        <td>John Doe</td>
+                                        <td>ENG</td>
+                                        <td>john@example.com</td>
+                                        <td>3</td>
+                                    </tr>
+                                    <tr>
+                                        <td>IT001</td>
+                                        <td>Jane Smith</td>
+                                        <td>IT</td>
+                                        <td>jane@example.com</td>
+                                        <td>2</td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card mb-4" style="background: #fff9e6;">
+                        <div class="card-body">
+                            <h5 class="card-title"><i class="mdi mdi-school"></i> Faculty Codes Reference</h5>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <ul class="list-unstyled">
+                                        <li><strong>ENG</strong> - Engineering</li>
+                                        <li><strong>IT</strong> - Information Technology</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-6">
+                                    <ul class="list-unstyled">
+                                        <li><strong>BM</strong> - Business Management</li>
+                                        <li><strong>AS</strong> - Applied Sciences</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title"><i class="mdi mdi-cloud-upload"></i> Step 2: Upload File</h5>
+                            <form th:action="@{/admin/students/bulk-upload}" method="post" enctype="multipart/form-data" id="uploadForm">
+                                <div class="form-group">
+                                    <label for="file">Select File (CSV or Excel) <span class="text-danger">*</span></label>
+                                    <div class="custom-file">
+                                        <input type="file" class="custom-file-input" id="file" name="file"
+                                               accept=".csv,.xlsx,.xls" required onchange="updateFileName(this)">
+                                        <label class="custom-file-label" for="file" id="fileLabel">Choose file...</label>
+                                    </div>
+                                    <small class="form-text text-muted">
+                                        Accepted formats: CSV (.csv), Excel (.xlsx, .xls)
+                                    </small>
+                                </div>
+
+                                <div class="alert alert-warning">
+                                    <i class="mdi mdi-alert"></i>
+                                    <strong>Important:</strong>
+                                    <ul class="mb-0">
+                                        <li>Duplicate student IDs will be skipped</li>
+                                        <li>Invalid faculty codes will cause errors</li>
+                                        <li>Required fields: studentId, fullName, facultyCode</li>
+                                        <li>Optional fields: email, year</li>
+                                    </ul>
+                                </div>
+
+                                <div class="form-group">
+                                    <button type="submit" class="btn btn-primary btn-lg">
+                                        <i class="mdi mdi-upload"></i> Upload Students
+                                    </button>
+                                    <a th:href="@{/admin/students}" class="btn btn-secondary btn-lg">
+                                        <i class="mdi mdi-arrow-left"></i> Back to List
+                                    </a>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function updateFileName(input) {
+            const fileName = input.files[0].name;
+            document.getElementById('fileLabel').textContent = fileName;
+        }
+
+        // Form validation
+        document.getElementById('uploadForm').addEventListener('submit', function(e) {
+            const fileInput = document.getElementById('file');
+            if (!fileInput.files || fileInput.files.length === 0) {
+                e.preventDefault();
+                alert('Please select a file to upload');
+                return false;
+            }
+
+            const fileName = fileInput.files[0].name;
+            const fileExtension = fileName.split('.').pop().toLowerCase();
+
+            if (!['csv', 'xlsx', 'xls'].includes(fileExtension)) {
+                e.preventDefault();
+                alert('Invalid file format. Please upload CSV or Excel file.');
+                return false;
+            }
+
+            // Show loading indicator
+            const submitButton = this.querySelector('button[type="submit"]');
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<i class="mdi mdi-loading mdi-spin"></i> Uploading...';
+        });
+    </script>
+</div>
+</body>
+</html>

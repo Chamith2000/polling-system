@@ -1,8 +1,9 @@
 package com.oexil.univote.controller;
 
 import com.oexil.univote.model.Position;
-import com.oexil.univote.repository.PositionRepository;
+import com.oexil.univote.service.PositionService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -13,14 +14,20 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 @RequiredArgsConstructor
 public class AdminPositionController {
 
-    private final PositionRepository positionRepository;
+    private final PositionService positionService;
 
-    @GetMapping
-    public String listPositions(Model model) {
-        model.addAttribute("positions", positionRepository.findAllByOrderByOrderPriority());
-        model.addAttribute("pageTitle", "Manage Positions");
-        return "admin/positions/list";
-    }
+//    @GetMapping
+//    public String listPositions(@RequestParam(defaultValue = "1") int page, Model model) {
+//        int pageSize = 20;
+//        Page<Position> positionPage = positionService.getAllPositionsOrdered(page, pageSize);
+//
+//        model.addAttribute("positions", positionPage.getContent());
+//        model.addAttribute("currentPage", page);
+//        model.addAttribute("totalPages", positionPage.getTotalPages());
+//        model.addAttribute("totalItems", positionPage.getTotalElements());
+//        model.addAttribute("pageTitle", "Manage Positions");
+//        return "admin/positions/list";
+//    }
 
     @GetMapping("/create")
     public String createForm(Model model) {
@@ -33,7 +40,7 @@ public class AdminPositionController {
     @PostMapping("/create")
     public String create(@ModelAttribute Position position, RedirectAttributes redirectAttributes) {
         try {
-            positionRepository.save(position);
+            positionService.createPosition(position);
             redirectAttributes.addFlashAttribute("successMessage", "Position created successfully!");
             return "redirect:/admin/positions";
         } catch (Exception e) {
@@ -44,7 +51,7 @@ public class AdminPositionController {
 
     @GetMapping("/edit/{id}")
     public String editForm(@PathVariable Long id, Model model, RedirectAttributes redirectAttributes) {
-        return positionRepository.findById(id)
+        return positionService.getPositionById(id)
                 .map(position -> {
                     model.addAttribute("position", position);
                     model.addAttribute("pageTitle", "Edit Position");
@@ -60,8 +67,7 @@ public class AdminPositionController {
     @PostMapping("/edit/{id}")
     public String update(@PathVariable Long id, @ModelAttribute Position position, RedirectAttributes redirectAttributes) {
         try {
-            position.setId(id);
-            positionRepository.save(position);
+            positionService.updatePosition(id, position);
             redirectAttributes.addFlashAttribute("successMessage", "Position updated successfully!");
             return "redirect:/admin/positions";
         } catch (Exception e) {
@@ -73,11 +79,27 @@ public class AdminPositionController {
     @PostMapping("/delete/{id}")
     public String delete(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         try {
-            positionRepository.deleteById(id);
+            positionService.deletePosition(id);
             redirectAttributes.addFlashAttribute("successMessage", "Position deleted successfully!");
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage", "Error deleting position: " + e.getMessage());
         }
         return "redirect:/admin/positions";
+    }
+
+    @GetMapping
+    public String listPositions(@RequestParam(defaultValue = "1") int page,
+                                @RequestParam(required = false) String keyword,
+                                Model model) {
+        int pageSize = 20;
+        Page<Position> positionPage = positionService.getAllPositionsOrdered(page, pageSize, keyword);
+
+        model.addAttribute("positions", positionPage.getContent());
+        model.addAttribute("currentPage", page);
+        model.addAttribute("totalPages", positionPage.getTotalPages());
+        model.addAttribute("totalItems", positionPage.getTotalElements());
+        model.addAttribute("keyword", keyword);
+        model.addAttribute("pageTitle", "Manage Positions");
+        return "admin/positions/list";
     }
 }

@@ -1,8 +1,9 @@
 package com.oexil.univote.controller;
 
 import com.oexil.univote.model.VotingPin;
-import com.oexil.univote.repository.VotingPinRepository;
+import com.oexil.univote.service.VotingPinService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -15,11 +16,17 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class AdminVotingPinController {
 
-    private final VotingPinRepository votingPinRepository;
+    private final VotingPinService votingPinService;
 
     @GetMapping
-    public String listPins(Model model) {
-        model.addAttribute("pins", votingPinRepository.findAll());
+    public String listPins(@RequestParam(defaultValue = "1") int page, Model model) {
+        int pageSize = 20;
+        Page<VotingPin> pinPage = votingPinService.getAllPins(page, pageSize);
+
+        model.addAttribute("pins", pinPage.getContent());
+        model.addAttribute("currentPage", page);
+        model.addAttribute("totalPages", pinPage.getTotalPages());
+        model.addAttribute("totalItems", pinPage.getTotalElements());
         model.addAttribute("pageTitle", "Manage Voting PINs");
         return "admin/voting-pins/list";
     }
@@ -39,7 +46,7 @@ public class AdminVotingPinController {
     @PostMapping("/create")
     public String create(@ModelAttribute VotingPin pin, RedirectAttributes redirectAttributes) {
         try {
-            votingPinRepository.save(pin);
+            votingPinService.createPin(pin);
             redirectAttributes.addFlashAttribute("successMessage", "Voting PIN created successfully!");
             return "redirect:/admin/voting-pins";
         } catch (Exception e) {
@@ -50,7 +57,7 @@ public class AdminVotingPinController {
 
     @GetMapping("/edit/{id}")
     public String editForm(@PathVariable Long id, Model model, RedirectAttributes redirectAttributes) {
-        return votingPinRepository.findById(id)
+        return votingPinService.getPinById(id)
                 .map(pin -> {
                     model.addAttribute("pin", pin);
                     model.addAttribute("pageTitle", "Edit Voting PIN");
@@ -66,8 +73,7 @@ public class AdminVotingPinController {
     @PostMapping("/edit/{id}")
     public String update(@PathVariable Long id, @ModelAttribute VotingPin pin, RedirectAttributes redirectAttributes) {
         try {
-            pin.setId(id);
-            votingPinRepository.save(pin);
+            votingPinService.updatePin(id, pin);
             redirectAttributes.addFlashAttribute("successMessage", "Voting PIN updated successfully!");
             return "redirect:/admin/voting-pins";
         } catch (Exception e) {
@@ -79,7 +85,7 @@ public class AdminVotingPinController {
     @PostMapping("/delete/{id}")
     public String delete(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         try {
-            votingPinRepository.deleteById(id);
+            votingPinService.deletePin(id);
             redirectAttributes.addFlashAttribute("successMessage", "Voting PIN deleted successfully!");
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage", "Error deleting PIN: " + e.getMessage());
@@ -90,10 +96,7 @@ public class AdminVotingPinController {
     @PostMapping("/toggle-active/{id}")
     public String toggleActive(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         try {
-            votingPinRepository.findById(id).ifPresent(pin -> {
-                pin.setIsActive(!pin.getIsActive());
-                votingPinRepository.save(pin);
-            });
+            votingPinService.togglePinActive(id);
             redirectAttributes.addFlashAttribute("successMessage", "PIN status toggled successfully!");
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage", "Error toggling PIN status: " + e.getMessage());

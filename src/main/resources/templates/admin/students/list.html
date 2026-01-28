@@ -11,10 +11,45 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center mb-4">
                         <h4 class="card-title mb-0"><i class="mdi mdi-account-multiple"></i> Manage Students</h4>
-                        <a th:href="@{/admin/students/create}" class="btn btn-primary"><i class="mdi mdi-plus"></i> Add Student</a>
+                        <div>
+                            <a th:href="@{/admin/students/bulk-upload}" class="btn btn-success mr-2">
+                                <i class="mdi mdi-upload"></i> Bulk Upload
+                            </a>
+                            <a th:href="@{/admin/students/create}" class="btn btn-primary">
+                                <i class="mdi mdi-plus"></i> Add Student
+                            </a>
+                        </div>
                     </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <form th:action="@{/admin/students}" method="get" class="form-inline">
+                                <div class="input-group" style="width: 100%;">
+                                    <input type="text" name="keyword" class="form-control"
+                                           placeholder="Search by ID or Name..."
+                                           th:value="${keyword}">
+                                    <div class="input-group-append">
+                                        <button type="submit" class="btn btn-secondary" title="Search">
+                                            <i class="mdi mdi-magnify"></i>
+                                        </button>
+                                        <a th:href="@{/admin/students}" class="btn btn-light" title="Clear Search">
+                                            <i class="mdi mdi-refresh"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
                     <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show"><strong>Success!</strong> <span th:text="${successMessage}"></span><button type="button" class="close" data-dismiss="alert">&times;</button></div>
                     <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show"><strong>Error!</strong> <span th:text="${errorMessage}"></span><button type="button" class="close" data-dismiss="alert">&times;</button></div>
+
+                    <div class="alert alert-info">
+                        <i class="mdi mdi-information"></i>
+                        <strong>Tip:</strong> Use the "Bulk Upload" button to add multiple students at once using CSV or Excel file.
+                        Total Students: <strong th:text="${totalItems}">0</strong>
+                    </div>
+
                     <div class="table-responsive">
                         <table class="table table-hover">
                             <thead><tr><th>Student ID</th><th>Full Name</th><th>Faculty</th><th>Email</th><th>Year</th><th>Actions</th></tr></thead>
@@ -34,6 +69,24 @@
                             </tbody>
                         </table>
                     </div>
+
+                    <nav aria-label="Page navigation" class="mt-4" th:if="${totalPages > 1}">
+                        <ul class="pagination justify-content-center">
+                            <li class="page-item" th:classappend="${currentPage == 1} ? 'disabled'">
+                                <a class="page-link" th:href="@{/admin/students(page=${currentPage - 1}, keyword=${keyword})}">Previous</a>
+                            </li>
+
+                            <li class="page-item" th:each="i : ${#numbers.sequence(1, totalPages)}"
+                                th:classappend="${currentPage == i} ? 'active'">
+                                <a class="page-link" th:href="@{/admin/students(page=${i}, keyword=${keyword})}" th:text="${i}">1</a>
+                            </li>
+
+                            <li class="page-item" th:classappend="${currentPage == totalPages} ? 'disabled'">
+                                <a class="page-link" th:href="@{/admin/students(page=${currentPage + 1}, keyword=${keyword})}">Next</a>
+                            </li>
+                        </ul>
+                    </nav>
+
                 </div>
             </div>
         </div>

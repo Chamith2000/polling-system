@@ -1,7 +1,8 @@
 package com.oexil.univote.dto;
 
-import lombok.Data;
 import jakarta.validation.constraints.NotNull;
+import lombok.Data;
+
 import java.util.Map;
 
 @Data

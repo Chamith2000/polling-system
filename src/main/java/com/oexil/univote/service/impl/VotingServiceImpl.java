@@ -1,102 +1,197 @@
-//package com.oexil.univote.service.impl;
-//
-//import com.oexil.univote.model.*;
-//import com.oexil.univote.repository.*;
-//import com.oexil.univote.service.VotingServiceold;
-//import org.springframework.beans.factory.annotation.Autowired;
-//import org.springframework.stereotype.Service;
-//import org.springframework.transaction.annotation.Transactional;
-//
-//import java.time.LocalDateTime;
-//import java.util.*;
-//import java.util.stream.Collectors;
-//
-//@Service
-//public class VotingServiceImpl implements VotingServiceold {
-//
-//    @Autowired
-//    private VotingPinRepository pinRepository;
-//    @Autowired
-//    private StudentRepository studentRepository;
-//    @Autowired
-//    private VotedStudentRepository votedStudentRepository;
-//    @Autowired
-//    private PositionRepository positionRepository;
-//    @Autowired
-//    private CandidateRepository candidateRepository;
-//    @Autowired
-//    private VoteRepository voteRepository;
-//
-//    @Override
-//    public boolean validatePin(String pin) {
-//        return pinRepository.findByPinValueAndIsActiveTrue(pin).isPresent();
-//    }
-//
-//    @Override
-//    public Student validateStudentForVoting(String studentId) throws Exception {
-//        Optional<Student> studentOpt = studentRepository.findById(studentId);
-//        if (!studentOpt.isPresent()) {
-//            throw new Exception("Student not found!");
-//        }
-//
-//        if (votedStudentRepository.existsByStudentId(studentId)) {
-//            throw new Exception("Student has already voted!");
-//        }
-//
-//        return studentOpt.get();
-//    }
-//
-//    @Override
-//    public Map<Position, List<Candidate>> getBallotPaper(Student student) {
-//        // Get all positions ordered by priority
-//        List<Position> allPositions = positionRepository.findAllByOrderByOrderPriorityAsc();
-//
-//        // Get all candidates suitable for this student
-//        // (Either common position candidates OR candidates from same faculty)
-//        List<Candidate> allCandidates = candidateRepository.findAll();
-//
-//        Map<Position, List<Candidate>> ballot = new LinkedHashMap<>();
-//
-//        for (Position pos : allPositions) {
-//            // Filter candidates for this position
-//            List<Candidate> posCandidates = allCandidates.stream()
-//                    .filter(c -> c.getPosition().getId().equals(pos.getId()))
-//                    .filter(c -> {
-//                        // Logic: If position is common, show all. If faculty specific, show only matching faculty.
-//                        if (pos.isCommon()) return true;
-//                        return c.getStudent().getFaculty().getId().equals(student.getFaculty().getId());
-//                    })
-//                    .collect(Collectors.toList());
-//
-//            if (!posCandidates.isEmpty()) {
-//                ballot.put(pos, posCandidates);
-//            }
-//        }
-//        return ballot;
-//    }
-//
-//    @Override
-//    @Transactional
-//    public void submitVote(String studentId, List<Long> candidateIds) throws Exception {
-//        if (votedStudentRepository.existsByStudentId(studentId)) {
-//            throw new Exception("Double voting detected!");
-//        }
-//
-//        LocalDateTime now = LocalDateTime.now();
-//
-//        for (Long candidateId : candidateIds) {
-//            Candidate candidate = candidateRepository.findById(candidateId)
-//                    .orElseThrow(() -> new Exception("Invalid candidate ID"));
-//
-//            Vote vote = new Vote();
-//            vote.setPosition(candidate.getPosition());
-//            vote.setCandidate(candidate);
-//            vote.setVotedAt(now);
-//            voteRepository.save(vote);
-//        }
-//
-//        // Mark student as voted
-//        VotedStudent votedStudent = new VotedStudent(studentId, now);
-//        votedStudentRepository.save(votedStudent);
-//    }
-//}
+package com.oexil.univote.service.impl;
+
+import com.oexil.univote.dto.*;
+import com.oexil.univote.model.*;
+import com.oexil.univote.repository.*;
+import com.oexil.univote.service.VotingService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
+import java.util.stream.Collectors;
+
+@Service
+@RequiredArgsConstructor
+public class VotingServiceImpl implements VotingService {
+
+    private final StudentRepository studentRepo;
+    private final VotedStudentRepository votedStudentRepo;
+    private final PositionRepository positionRepo;
+    private final CandidateRepository candidateRepo;
+    private final VoteRepository voteRepo;
+    private final VotingPinRepository votingPinRepo;
+
+    @Override
+    public boolean validatePin(String pin) {
+        Optional<VotingPin> votingPin = votingPinRepo.findByPinValueAndIsActiveTrue(pin);
+        if (votingPin.isEmpty()) {
+            return false;
+        }
+
+        VotingPin vp = votingPin.get();
+        LocalDateTime now = LocalDateTime.now();
+
+        return vp.getActiveFrom().isBefore(now) && vp.getActiveUntil().isAfter(now);
+    }
+
+    @Override
+    public ValidationResponse validateStudent(String studentId) {
+        // Check if student exists
+        Optional<Student> studentOpt = studentRepo.findByStudentId(studentId);
+        if (studentOpt.isEmpty()) {
+            return new ValidationResponse(false, "Student ID not found", null);
+        }
+
+        // Check if already voted
+        if (votedStudentRepo.existsByStudentId(studentId)) {
+            return new ValidationResponse(false, "Student has already voted", null);
+        }
+
+        // Create voting session
+        Student student = studentOpt.get();
+        VotingSessionDTO session = createVotingSession(student);
+
+        return new ValidationResponse(true, "Validation successful", session);
+    }
+
+    private VotingSessionDTO createVotingSession(Student student) {
+        VotingSessionDTO session = new VotingSessionDTO();
+        session.setStudentId(student.getStudentId());
+        session.setStudentName(student.getFullName());
+        session.setFacultyId(student.getFaculty().getId());
+        session.setFacultyName(student.getFaculty().getName());
+        session.setFacultyColor(student.getFaculty().getColorCode());
+        session.setSelectedCandidates(new HashMap<>());
+        session.setCurrentStep(0);
+
+        // Get all positions for this student
+        List<Position> allPositions = positionRepo.findAllByOrderByOrderPriority();
+        List<PositionDTO> positionDTOs = new ArrayList<>();
+
+        for (Position position : allPositions) {
+            PositionDTO dto = new PositionDTO();
+            dto.setId(position.getId());
+            dto.setName(position.getName());
+            dto.setDescription(position.getDescription());
+            dto.setIsCommon(position.getIsCommon());
+            dto.setOrderPriority(position.getOrderPriority());
+
+            // Get candidates based on position type
+            List<Candidate> candidates;
+
+            if (position.getIsCommon()) {
+                // For common positions, get all candidates (faculty_id is NULL)
+                candidates = candidateRepo.findByPosition_IdAndFacultyIsNull(position.getId());
+            } else {
+                // For faculty-specific positions, get candidates for this faculty
+                candidates = candidateRepo.findByPosition_IdAndFaculty_Id(
+                        position.getId(),
+                        student.getFaculty().getId()
+                );
+            }
+
+            // Only add position if it has candidates
+            if (!candidates.isEmpty()) {
+                List<CandidateDTO> candidateDTOs = candidates.stream()
+                        .map(this::toCandidateDTO)
+                        .collect(Collectors.toList());
+
+                dto.setCandidates(candidateDTOs);
+                positionDTOs.add(dto);
+            }
+        }
+
+        session.setPositions(positionDTOs);
+        session.setTotalSteps(positionDTOs.size());
+
+        return session;
+    }
+
+    private CandidateDTO toCandidateDTO(Candidate candidate) {
+        CandidateDTO dto = new CandidateDTO();
+        dto.setId(candidate.getId());
+        dto.setStudentId(candidate.getStudent().getStudentId());
+        dto.setStudentName(candidate.getStudent().getFullName());
+        dto.setDescription(candidate.getDescription());
+        dto.setImageUrl(candidate.getImageUrl());
+        if (candidate.getFaculty() != null) {
+            dto.setFacultyName(candidate.getFaculty().getName());
+        }
+        return dto;
+    }
+
+    @Override
+    @Transactional
+    public ValidationResponse submitVotes(VoteSubmissionDTO submission, String ipAddress) {
+        // Validate student hasn't voted
+        if (votedStudentRepo.existsByStudentId(submission.getStudentId())) {
+            return new ValidationResponse(false, "Student has already voted", null);
+        }
+
+        Student student = studentRepo.findByStudentId(submission.getStudentId())
+                .orElseThrow(() -> new RuntimeException("Student not found"));
+
+        // Save all votes
+        for (Map.Entry<Long, Long> entry : submission.getVotes().entrySet()) {
+            Vote vote = new Vote();
+            vote.setStudent(student);
+
+            Position position = positionRepo.findById(entry.getKey())
+                    .orElseThrow(() -> new RuntimeException("Position not found"));
+            vote.setPosition(position);
+
+            Candidate candidate = candidateRepo.findById(entry.getValue())
+                    .orElseThrow(() -> new RuntimeException("Candidate not found"));
+            vote.setCandidate(candidate);
+
+            voteRepo.save(vote);
+        }
+
+        // Mark student as voted
+        VotedStudent votedStudent = new VotedStudent();
+        votedStudent.setStudentId(submission.getStudentId());
+        votedStudent.setIpAddress(ipAddress);
+        votedStudentRepo.save(votedStudent);
+
+        return new ValidationResponse(true, "Votes submitted successfully", null);
+    }
+
+    @Override
+    public List<Map<String, Object>> searchStudentsForOperator(String stationId, String query) {
+        // stationId matches facultyCode (e.g., 'ENG')
+        List<Student> students = studentRepo.searchByFacultyAndQuery(stationId, query);
+
+        return students.stream().map(s -> {
+            Map<String, Object> map = new HashMap<>();
+            map.put("studentId", s.getStudentId());
+            map.put("fullName", s.getFullName());
+            map.put("hasVoted", votedStudentRepo.existsByStudentId(s.getStudentId()));
+            return map;
+        }).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<Map<String, Object>> getRecentVoters(String stationId) {
+        // Get top 5 recent votes for this faculty
+        List<VotedStudent> recentVotes = votedStudentRepo.findRecentVotesByFaculty(stationId, PageRequest.of(0, 5));
+
+        return recentVotes.stream().map(v -> {
+            Optional<Student> s = studentRepo.findByStudentId(v.getStudentId());
+            Map<String, Object> map = new HashMap<>();
+            map.put("studentId", v.getStudentId());
+            map.put("fullName", s.map(Student::getFullName).orElse("Unknown"));
+            map.put("votedAt", v.getVotedAt().format(DateTimeFormatter.ofPattern("HH:mm:ss")));
+            return map;
+        }).collect(Collectors.toList());
+    }
+
+    @Override
+    public long getVoteCountByStation(String stationId) {
+        // Count students who voted from this faculty
+        return votedStudentRepo.countByFacultyCode(stationId);
+    }
+}

@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Live Election Results</title>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+    <link rel="stylesheet" th:href="@{/vendors/iconfonts/mdi/css/materialdesignicons.min.css}">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap');
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            text-align: center;
+            width: 95%;
+            max-width: 1200px;
+        }
+
+        /* Waiting Screen */
+        .waiting-box {
+            padding: 60px 40px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            backdrop-filter: blur(10px);
+        }
+
+        .waiting-box h1 {
+            color: #27337B;
+            font-size: 3rem;
+            font-weight: 700;
+            margin: 20px 0 10px;
+        }
+
+        .waiting-box p {
+            color: #666;
+            font-size: 1.2rem;
+            margin: 0;
+        }
+
+        /* Results Screen */
+        .result-box {
+            display: none;
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 30px;
+            padding: 50px;
+            box-shadow: 0 25px 80px rgba(0,0,0,0.4);
+            animation: zoomIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+            backdrop-filter: blur(10px);
+        }
+
+        @keyframes zoomIn {
+            from {
+                transform: scale(0.7);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        #posName {
+            color: #27337B;
+            margin-bottom: 40px;
+            font-size: 3rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+
+        /* Winner Section */
+        .winner-section {
+            margin-bottom: 50px;
+            padding: 40px;
+            background: linear-gradient(135deg, #f0fff4 0%, #e8f5e9 100%);
+            border-radius: 25px;
+            border: 3px solid #28a745;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .winner-section::before {
+            content: '🎉';
+            position: absolute;
+            top: -20px;
+            right: -20px;
+            font-size: 150px;
+            opacity: 0.1;
+        }
+
+        .winner-img {
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            border: 6px solid #E5A949;
+            object-fit: cover;
+            box-shadow: 0 15px 40px rgba(229, 169, 73, 0.5);
+            margin-bottom: 20px;
+        }
+
+        .winner-section h2 {
+            margin: 20px 0 15px;
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: #2d3748;
+        }
+
+        .winner-badge {
+            background: linear-gradient(135deg, #E5A949 0%, #f0c060 100%);
+            color: #000;
+            padding: 12px 35px;
+            border-radius: 50px;
+            display: inline-block;
+            font-weight: 800;
+            font-size: 1.3rem;
+            box-shadow: 0 8px 25px rgba(229, 169, 73, 0.4);
+            letter-spacing: 2px;
+        }
+
+        .winner-votes {
+            margin-top: 20px;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #28a745;
+        }
+
+        .winner-votes i {
+            margin-right: 10px;
+        }
+
+        /* Tie Alert */
+        .tie-alert {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffe5a1 100%);
+            border: 3px solid #ffc107;
+            border-radius: 20px;
+            padding: 30px;
+            font-size: 2rem;
+            font-weight: 700;
+            color: #856404;
+            margin-bottom: 30px;
+        }
+
+        /* Candidate List */
+        #candidateList {
+            margin-top: 30px;
+        }
+
+        .candidate-row {
+            display: flex;
+            align-items: center;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            margin: 15px 0;
+            padding: 25px;
+            border-radius: 20px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+            transition: transform 0.3s, box-shadow 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .candidate-row:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+
+        .candidate-rank {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 60px;
+            background: linear-gradient(135deg, #27337B 0%, #2494D3 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            font-weight: 900;
+            color: white;
+        }
+
+        .candidate-name {
+            flex: 0 0 250px;
+            text-align: left;
+            font-weight: 700;
+            font-size: 1.4rem;
+            color: #2d3748;
+            padding-left: 80px;
+        }
+
+        .progress-container {
+            flex-grow: 1;
+            margin: 0 30px;
+            position: relative;
+        }
+
+        .progress-bg {
+            height: 35px;
+            background: rgba(0,0,0,0.1);
+            border-radius: 20px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #2494D3 0%, #27337B 100%);
+            border-radius: 20px;
+            transition: width 1.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            position: relative;
+            box-shadow: 0 2px 10px rgba(36, 148, 211, 0.4);
+        }
+
+        .progress-bar.winner-bar {
+            background: linear-gradient(90deg, #28a745 0%, #34ce57 100%);
+            box-shadow: 0 2px 10px rgba(40, 167, 69, 0.5);
+        }
+
+        .progress-bar::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg,
+            transparent 0%,
+            rgba(255,255,255,0.3) 50%,
+            transparent 100%);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .vote-info {
+            flex: 0 0 200px;
+            text-align: right;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 5px;
+        }
+
+        .vote-percentage {
+            font-weight: 900;
+            font-size: 2rem;
+            color: #27337B;
+            line-height: 1;
+        }
+
+        .vote-count {
+            font-weight: 600;
+            font-size: 1.2rem;
+            color: #666;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .vote-count i {
+            color: #2494D3;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .result-box {
+                padding: 30px 20px;
+            }
+
+            #posName {
+                font-size: 2rem;
+            }
+
+            .candidate-row {
+                flex-direction: column;
+                text-align: center;
+                padding: 20px;
+            }
+
+            .candidate-rank {
+                position: static;
+                width: 50px;
+                height: 50px;
+                border-radius: 50%;
+                margin-bottom: 10px;
+            }
+
+            .candidate-name {
+                flex: none;
+                padding-left: 0;
+                margin-bottom: 10px;
+            }
+
+            .progress-container {
+                width: 100%;
+                margin: 10px 0;
+            }
+
+            .vote-info {
+                flex: none;
+                align-items: center;
+                margin-top: 10px;
+            }
+        }
+
+        /* Loading Animation */
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .mdi-spin {
+            animation: spin 2s linear infinite;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <!-- Waiting Screen -->
+    <div id="waitingScreen" class="waiting-box">
+        <i class="mdi mdi-loading mdi-spin" style="font-size: 100px; color: #27337B;"></i>
+        <h1>Waiting for Results...</h1>
+        <p>The election commission is finalizing the results for the next position.</p>
+    </div>
+
+    <!-- Results Screen -->
+    <div id="resultScreen" class="result-box">
+        <h1 id="posName">Position Name</h1>
+
+        <!-- Winner Area -->
+        <div id="winnerArea" class="winner-section"></div>
+
+        <!-- Tie Alert -->
+        <div id="tieAlert" style="display: none;" class="tie-alert">
+            <i class="mdi mdi-scale-balance"></i> IT'S A TIE!
+        </div>
+
+        <!-- Candidates List -->
+        <div id="candidateList"></div>
+    </div>
+</div>
+
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    let stompClient = null;
+
+    function connect() {
+        const socket = new SockJS('/ws-voting');
+        stompClient = Stomp.over(socket);
+        stompClient.connect({}, function (frame) {
+            console.log('Connected to WebSocket');
+            stompClient.subscribe('/topic/results/display', function (message) {
+                const data = JSON.parse(message.body);
+                if (data.action === 'SHOW_RESULT') {
+                    showResult(data.result);
+                } else if (data.action === 'RESET') {
+                    resetToWaiting();
+                }
+            });
+        }, function(error) {
+            console.error('WebSocket connection error:', error);
+            setTimeout(connect, 5000); // Retry connection after 5 seconds
+        });
+    }
+
+    function showResult(result) {
+        console.log('Showing result:', result);
+
+        // Hide waiting, show results
+        document.getElementById('waitingScreen').style.display = 'none';
+        document.getElementById('resultScreen').style.display = 'block';
+
+        // Set position name
+        document.getElementById('posName').innerText = result.positionName;
+
+        // Handle Winner Section
+        const winnerArea = document.getElementById('winnerArea');
+        const tieAlert = document.getElementById('tieAlert');
+
+        if (result.tie) {
+            // Show tie alert
+            tieAlert.style.display = 'block';
+            winnerArea.style.display = 'none';
+        } else if (result.winner) {
+            // Show winner
+            tieAlert.style.display = 'none';
+            winnerArea.style.display = 'block';
+            winnerArea.innerHTML = `
+                <img src="${result.winner.imageUrl || '/images/default-user.png'}"
+                     class="winner-img"
+                     alt="${result.winner.name}">
+                <h2>${result.winner.name}</h2>
+                <div class="winner-badge">
+                    <i class="mdi mdi-trophy"></i> WINNER
+                </div>
+                <div class="winner-votes">
+                    <i class="mdi mdi-vote"></i>
+                    ${result.winner.voteCount} votes (${result.winner.percentage}%)
+                </div>
+            `;
+        } else {
+            winnerArea.style.display = 'none';
+            tieAlert.style.display = 'none';
+        }
+
+        // Display Candidates
+        const list = document.getElementById('candidateList');
+        list.innerHTML = '';
+
+        if (result.candidates && result.candidates.length > 0) {
+            result.candidates.forEach((candidate, index) => {
+                const isWinner = result.winner && candidate.id === result.winner.id;
+                const rankNumber = index + 1;
+
+                const candidateDiv = document.createElement('div');
+                candidateDiv.className = 'candidate-row';
+                candidateDiv.innerHTML = `
+                    <div class="candidate-rank">${rankNumber}</div>
+                    <div class="candidate-name">${candidate.name}</div>
+                    <div class="progress-container">
+                        <div class="progress-bg">
+                            <div class="progress-bar ${isWinner ? 'winner-bar' : ''}"
+                                 style="width: 0%"
+                                 id="bar-${candidate.id}">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="vote-info">
+                        <div class="vote-percentage">${candidate.percentage}%</div>
+                        <div class="vote-count">
+                            <i class="mdi mdi-vote"></i>
+                            <span>${candidate.voteCount} votes</span>
+                        </div>
+                    </div>
+                `;
+
+                list.appendChild(candidateDiv);
+
+                // Animate progress bar after a short delay
+                setTimeout(() => {
+                    const bar = document.getElementById(`bar-${candidate.id}`);
+                    if (bar) {
+                        bar.style.width = candidate.percentage + '%';
+                    }
+                }, 200 + (index * 100));
+            });
+        }
+    }
+
+    function resetToWaiting() {
+        document.getElementById('waitingScreen').style.display = 'block';
+        document.getElementById('resultScreen').style.display = 'none';
+
+        // Clear content
+        document.getElementById('candidateList').innerHTML = '';
+        document.getElementById('winnerArea').innerHTML = '';
+    }
+
+    // Start connection on page load
+    connect();
+
+    /*]]>*/
+</script>
+</body>
+</html>
